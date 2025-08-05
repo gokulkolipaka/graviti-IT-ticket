@@ -3,317 +3,263 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Graviti Ticketing System</title>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Graviti Support Ticketing System</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 </head>
 <body>
-    <div id="app">
-        <!-- Login Page -->
-        <div id="loginPage" class="page active">
-            <div class="login-container">
-                <div class="company-header">
-                    <img id="companyLogo" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTcwIiBoZWlnaHQ9IjY2IiB2aWV3Qm94PSIwIDAgMTcwIDY2IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxNzAiIGhlaWdodD0iNjYiIGZpbGw9IiMzMzY2Y2MiLz48dGV4dCB4PSI4NSIgeT0iNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkdyYXZpdGk8L3RleHQ+PC9zdmc+" alt="Company Logo">
-                    <h1 id="companyName" class="editable-company-name">Graviti Technologies</h1>
-                </div>
-                <div class="login-form">
-                    <h2>Login to Ticketing System</h2>
-                    <form id="loginForm">
-                        <div class="form-group">
-                            <label for="username">Username:</label>
-                            <input type="text" id="username" name="username" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="password">Password:</label>
-                            <input type="password" id="password" name="password" required>
-                        </div>
-                        <button type="submit">Login</button>
-                    </form>
-                    <div id="loginError" class="error-message"></div>
-                </div>
+    <!-- Login Page -->
+    <div id="loginPage" class="page active">
+        <div class="login-container">
+            <div class="logo-section">
+                <img id="companyLogo" src="assets/logo.png" alt="Company Logo" class="company-logo">
+                <h1 id="companyName" class="company-name" onclick="editCompanyName()">Graviti Technologies</h1>
             </div>
-        </div>
-
-        <!-- Password Change Modal -->
-        <div id="passwordChangeModal" class="modal">
-            <div class="modal-content">
-                <h3>Change Default Password</h3>
-                <p>For security reasons, please change the default admin password.</p>
-                <form id="passwordChangeForm">
-                    <div class="form-group">
-                        <label for="newPassword">New Password:</label>
-                        <input type="password" id="newPassword" required minlength="8">
-                    </div>
-                    <div class="form-group">
-                        <label for="confirmPassword">Confirm Password:</label>
-                        <input type="password" id="confirmPassword" required>
-                    </div>
-                    <button type="submit">Change Password</button>
+            <div class="login-form">
+                <h2>Login to Support System</h2>
+                <form id="loginForm">
+                    <input type="text" id="username" placeholder="LDAP Username" required>
+                    <input type="password" id="password" placeholder="Password" required>
+                    <button type="submit">Login</button>
                 </form>
+                <div id="loginError" class="error-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Change Modal -->
+    <div id="passwordChangeModal" class="modal">
+        <div class="modal-content">
+            <h3>Change Default Password</h3>
+            <p>For security reasons, please change your default password.</p>
+            <form id="passwordChangeForm">
+                <input type="password" id="newPassword" placeholder="New Password" required>
+                <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+                <button type="submit">Change Password</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="page">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-section">
+                <img id="appLogo" src="assets/logo.png" alt="Company Logo" class="company-logo">
+                <span id="appCompanyName" class="company-name">Graviti Technologies</span>
+            </div>
+            <nav class="nav-menu">
+                <button onclick="showPage('ticketForm')" class="nav-btn">New Ticket</button>
+                <button onclick="showPage('myTickets')" class="nav-btn">My Tickets</button>
+                <button onclick="showPage('dashboard')" class="nav-btn admin-only">Dashboard</button>
+                <button onclick="showPage('kanban')" class="nav-btn admin-only">Kanban Board</button>
+                <button onclick="showPage('userManagement')" class="nav-btn admin-only">User Management</button>
+                <button onclick="showPage('reports')" class="nav-btn admin-only">Reports</button>
+                <button onclick="showPage('settings')" class="nav-btn admin-only">Settings</button>
+                <button onclick="logout()" class="nav-btn logout">Logout</button>
+            </nav>
+        </header>
+
+        <!-- Ticket Form Page -->
+        <div id="ticketForm" class="content-page active">
+            <h2>Submit New Support Ticket</h2>
+            <form id="newTicketForm" class="ticket-form">
+                <div class="form-group">
+                    <label for="ticketType">Type of Ticket:</label>
+                    <select id="ticketType" required>
+                        <option value="">Select Type</option>
+                        <option value="Password reset">Password reset</option>
+                        <option value="New User ID Creation">New User ID Creation</option>
+                        <option value="De-Activate">De-Activate</option>
+                        <option value="Hardware issue">Hardware issue</option>
+                        <option value="Software issue">Software issue</option>
+                        <option value="New Asset">New Asset</option>
+                        <option value="Network issue">Network issue</option>
+                        <option value="Printer/Xerox issue">Printer/Xerox issue</option>
+                        <option value="Role Change">Role Change</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="severity">Severity:</label>
+                    <select id="severity" required>
+                        <option value="">Select Severity</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="supervisor">Supervisor/Reporting Manager Email:</label>
+                    <input type="email" id="supervisor" placeholder="supervisor@company.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Location:</label>
+                    <input type="text" id="location" placeholder="Office Location" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="employeeId">Employee ID:</label>
+                    <input type="text" id="employeeId" placeholder="Employee ID" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description:</label>
+                    <textarea id="description" rows="5" placeholder="Detailed description of the issue" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="attachments">Attachments:</label>
+                    <input type="file" id="attachments" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+                </div>
+
+                <button type="submit" class="submit-btn">Submit Ticket</button>
+            </form>
+        </div>
+
+        <!-- My Tickets Page -->
+        <div id="myTickets" class="content-page">
+            <h2>My Tickets</h2>
+            <div id="ticketsList" class="tickets-list"></div>
+        </div>
+
+        <!-- Dashboard Page -->
+        <div id="dashboard" class="content-page admin-only">
+            <h2>Dashboard</h2>
+            <div class="dashboard-filters">
+                <select id="dashboardFilter">
+                    <option value="department">Department Wise</option>
+                    <option value="category">Category Wise</option>
+                    <option value="teammember">Team Member Wise</option>
+                </select>
+            </div>
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <h3>Total Tickets</h3>
+                    <span id="totalTickets" class="stat-number">0</span>
+                </div>
+                <div class="stat-card">
+                    <h3>Open Tickets</h3>
+                    <span id="openTickets" class="stat-number">0</span>
+                </div>
+                <div class="stat-card">
+                    <h3>In Progress</h3>
+                    <span id="inProgressTickets" class="stat-number">0</span>
+                </div>
+                <div class="stat-card">
+                    <h3>Closed Tickets</h3>
+                    <span id="closedTickets" class="stat-number">0</span>
+                </div>
+            </div>
+            <canvas id="dashboardChart"></canvas>
+        </div>
+
+        <!-- Kanban Board -->
+        <div id="kanban" class="content-page admin-only">
+            <h2>Kanban Board</h2>
+            <div class="kanban-board">
+                <div class="kanban-column" data-status="Open">
+                    <h3>Open</h3>
+                    <div id="openColumn" class="kanban-tickets"></div>
+                </div>
+                <div class="kanban-column" data-status="In Progress">
+                    <h3>In Progress</h3>
+                    <div id="inProgressColumn" class="kanban-tickets"></div>
+                </div>
+                <div class="kanban-column" data-status="Resolved">
+                    <h3>Resolved</h3>
+                    <div id="resolvedColumn" class="kanban-tickets"></div>
+                </div>
+                <div class="kanban-column" data-status="Closed">
+                    <h3>Closed</h3>
+                    <div id="closedColumn" class="kanban-tickets"></div>
+                </div>
             </div>
         </div>
 
-        <!-- Main Dashboard -->
-        <div id="dashboardPage" class="page">
-            <nav class="navbar">
-                <div class="nav-brand">
-                    <img id="navLogo" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTcwIiBoZWlnaHQ9IjY2IiB2aWV3Qm94PSIwIDAgMTcwIDY2IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxNzAiIGhlaWdodD0iNjYiIGZpbGw9IiMzMzY2Y2MiLz48dGV4dCB4PSI4NSIgeT0iNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkdyYXZpdGk8L3RleHQ+PC9zdmc+" alt="Logo">
-                    <span id="navCompanyName">Graviti Technologies</span>
+        <!-- User Management -->
+        <div id="userManagement" class="content-page admin-only">
+            <h2>User Management</h2>
+            <button onclick="showAddUserModal()" class="add-btn">Add New User</button>
+            <div id="usersList" class="users-list"></div>
+        </div>
+
+        <!-- Reports Page -->
+        <div id="reports" class="content-page admin-only">
+            <h2>Ticket Reports</h2>
+            <div class="report-filters">
+                <input type="date" id="startDate">
+                <input type="date" id="endDate">
+                <button onclick="generateReport()">Generate Report</button>
+            </div>
+            <div id="reportTable" class="report-table"></div>
+        </div>
+
+        <!-- Settings Page -->
+        <div id="settings" class="content-page admin-only">
+            <h2>System Settings</h2>
+            <div class="settings-section">
+                <h3>Company Branding</h3>
+                <div class="form-group">
+                    <label for="logoUpload">Upload Company Logo (170x66 pixels):</label>
+                    <input type="file" id="logoUpload" accept="image/*" onchange="uploadLogo()">
                 </div>
-                <div class="nav-menu">
-                    <button class="nav-btn active" data-section="createTicket">Create Ticket</button>
-                    <button class="nav-btn" data-section="myTickets">My Tickets</button>
-                    <button class="nav-btn admin-only" data-section="kanban">Kanban Board</button>
-                    <button class="nav-btn admin-only" data-section="ticketFlow">Ticket Flow</button>
-                    <button class="nav-btn admin-only" data-section="dashboard">Dashboard</button>
-                    <button class="nav-btn admin-only" data-section="userManagement">User Management</button>
-                    <button class="nav-btn admin-only" data-section="settings">Settings</button>
-                    <button class="nav-btn" id="logoutBtn">Logout</button>
+                <div class="form-group">
+                    <label for="companyNameEdit">Company Name:</label>
+                    <input type="text" id="companyNameEdit" value="Graviti Technologies">
+                    <button onclick="updateCompanyName()">Update</button>
                 </div>
-                <div class="user-info">
-                    <span id="currentUser"></span>
-                </div>
-            </nav>
-
-            <main class="main-content">
-                <!-- Create Ticket Section -->
-                <section id="createTicketSection" class="content-section active">
-                    <h2>Create New Ticket</h2>
-                    <form id="ticketForm" class="ticket-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="ticketType">Type of Ticket:</label>
-                                <select id="ticketType" name="ticketType" required>
-                                    <option value="">Select Type</option>
-                                    <option value="password-reset">Password Reset</option>
-                                    <option value="new-user">New User ID Creation</option>
-                                    <option value="deactivate">De-Activate</option>
-                                    <option value="hardware">Hardware Issue</option>
-                                    <option value="software">Software Issue</option>
-                                    <option value="new-asset">New Asset</option>
-                                    <option value="network">Network Issue</option>
-                                    <option value="printer">Printer/Xerox Issue</option>
-                                    <option value="role-change">Role Change</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="severity">Severity:</label>
-                                <select id="severity" name="severity" required>
-                                    <option value="">Select Severity</option>
-                                    <option value="high">High</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="low">Low</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="supervisor">Supervisor/Reporting Manager:</label>
-                                <input type="email" id="supervisor" name="supervisor" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="location">Location:</label>
-                                <input type="text" id="location" name="location" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="employeeId">Employee ID:</label>
-                                <input type="text" id="employeeId" name="employeeId" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="description">Description:</label>
-                            <textarea id="description" name="description" rows="5" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="attachments">Attachments:</label>
-                            <input type="file" id="attachments" name="attachments" multiple>
-                        </div>
-                        <button type="submit" class="submit-btn">Submit Ticket</button>
-                    </form>
-                </section>
-
-                <!-- My Tickets Section -->
-                <section id="myTicketsSection" class="content-section">
-                    <h2>My Tickets</h2>
-                    <div id="ticketsList" class="tickets-list"></div>
-                </section>
-
-                <!-- Kanban Board Section -->
-                <section id="kanbanSection" class="content-section admin-only">
-                    <h2>Kanban Board</h2>
-                    <div class="kanban-board">
-                        <div class="kanban-column">
-                            <h3>Open</h3>
-                            <div id="openTickets" class="kanban-tickets"></div>
-                        </div>
-                        <div class="kanban-column">
-                            <h3>In Progress</h3>
-                            <div id="inProgressTickets" class="kanban-tickets"></div>
-                        </div>
-                        <div class="kanban-column">
-                            <h3>Resolved</h3>
-                            <div id="resolvedTickets" class="kanban-tickets"></div>
-                        </div>
-                        <div class="kanban-column">
-                            <h3>Closed</h3>
-                            <div id="closedTickets" class="kanban-tickets"></div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Ticket Flow Section -->
-                <section id="ticketFlowSection" class="content-section admin-only">
-                    <h2>Ticket Flow</h2>
-                    <div class="ticket-flow-controls">
-                        <button id="exportTicketsBtn">Export to CSV</button>
-                    </div>
-                    <div class="table-container">
-                        <table id="ticketFlowTable" class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Ticket ID</th>
-                                    <th>Summary</th>
-                                    <th>Status</th>
-                                    <th>Last Update</th>
-                                    <th>Opening Date</th>
-                                    <th>Severity</th>
-                                    <th>Requestor</th>
-                                    <th>Assigned To</th>
-                                    <th>Type/Category</th>
-                                    <th>Time to Resolve</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="ticketFlowBody"></tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <!-- Dashboard Section -->
-                <section id="dashboardSection" class="content-section admin-only">
-                    <h2>Visual Dashboard</h2>
-                    <div class="dashboard-filters">
-                        <select id="dashboardFilter">
-                            <option value="all">All Tickets</option>
-                            <option value="department">By Department</option>
-                            <option value="category">By Category</option>
-                            <option value="assignee">By Team Member</option>
-                        </select>
-                    </div>
-                    <div class="dashboard-stats">
-                        <div class="stat-card">
-                            <h3>Total Tickets</h3>
-                            <div id="totalTickets" class="stat-number">0</div>
-                        </div>
-                        <div class="stat-card">
-                            <h3>Open Tickets</h3>
-                            <div id="openTicketsCount" class="stat-number">0</div>
-                        </div>
-                        <div class="stat-card">
-                            <h3>In Progress</h3>
-                            <div id="inProgressCount" class="stat-number">0</div>
-                        </div>
-                        <div class="stat-card">
-                            <h3>Resolved</h3>
-                            <div id="resolvedCount" class="stat-number">0</div>
-                        </div>
-                    </div>
-                    <div id="alertsContainer" class="alerts-container"></div>
-                </section>
-
-                <!-- User Management Section -->
-                <section id="userManagementSection" class="content-section admin-only">
-                    <h2>User Management</h2>
-                    <div class="user-management-controls">
-                        <button id="addUserBtn" class="btn btn-primary">Add User</button>
-                    </div>
-                    <div class="table-container">
-                        <table id="usersTable" class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Username</th>
-                                    <th>Role</th>
-                                    <th>Department</th>
-                                    <th>Email</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="usersTableBody"></tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <!-- Settings Section -->
-                <section id="settingsSection" class="content-section admin-only">
-                    <h2>Settings</h2>
-                    <div class="settings-form">
-                        <div class="form-group">
-                            <label for="logoUpload">Company Logo (170x66 pixels):</label>
-                            <input type="file" id="logoUpload" accept="image/*">
-                            <button id="uploadLogoBtn">Upload Logo</button>
-                        </div>
-                        <div class="form-group">
-                            <label for="companyNameEdit">Company Name:</label>
-                            <input type="text" id="companyNameEdit" value="Graviti Technologies">
-                            <button id="saveCompanyNameBtn">Save</button>
-                        </div>
-                    </div>
-                </section>
-            </main>
+            </div>
         </div>
     </div>
 
     <!-- Modals -->
-    <div id="assignTicketModal" class="modal">
+    <div id="ticketModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3>Assign Ticket</h3>
-            <form id="assignTicketForm">
-                <div class="form-group">
-                    <label for="assignToUser">Assign to:</label>
-                    <select id="assignToUser" required></select>
-                </div>
-                <button type="submit">Assign</button>
-            </form>
+            <span class="close" onclick="closeModal('ticketModal')">&times;</span>
+            <div id="ticketDetails"></div>
         </div>
     </div>
 
     <div id="addUserModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
+            <span class="close" onclick="closeModal('addUserModal')">&times;</span>
             <h3>Add New User</h3>
             <form id="addUserForm">
-                <div class="form-group">
-                    <label for="newUsername">Username:</label>
-                    <input type="text" id="newUsername" required>
-                </div>
-                <div class="form-group">
-                    <label for="newUserRole">Role:</label>
-                    <select id="newUserRole" required>
-                        <option value="user">User</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="newUserDepartment">Department:</label>
-                    <input type="text" id="newUserDepartment" required>
-                </div>
-                <div class="form-group">
-                    <label for="newUserEmail">Email:</label>
-                    <input type="email" id="newUserEmail" required>
-                </div>
-                <div class="form-group">
-                    <label for="newUserPassword">Password:</label>
-                    <input type="password" id="newUserPassword" required>
-                </div>
+                <input type="text" id="newUsername" placeholder="Username" required>
+                <input type="email" id="newUserEmail" placeholder="Email" required>
+                <input type="text" id="newUserDepartment" placeholder="Department" required>
+                <select id="newUserRole">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
                 <button type="submit">Add User</button>
             </form>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <div id="assignModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('assignModal')">&times;</span>
+            <h3>Assign Ticket</h3>
+            <form id="assignForm">
+                <select id="assignTo" required>
+                    <option value="">Select Team Member</option>
+                </select>
+                <button type="submit">Assign</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="data/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/kanban.js"></script>
 </body>
 </html>
