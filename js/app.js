@@ -1,4 +1,4 @@
-// Main Application Logic
+// Main Application Logic with Three-Tier System
 class TicketingSystem {
     constructor() {
         this.tickets = [];
@@ -9,6 +9,8 @@ class TicketingSystem {
             'Low': 72 // 72 hours
         };
         this.currentAssignTicket = null;
+        this.needsRefresh = false;
+        this.showOnlyMyTickets = false;
         this.init();
     }
 
@@ -31,23 +33,50 @@ class TicketingSystem {
 
     saveTickets() {
         localStorage.setItem('tickets', JSON.stringify(this.tickets));
+        this.needsRefresh = true;
     }
 
     checkAuth() {
         const user = auth.getCurrentUser();
         if (user) {
             this.showMainApp();
-            if (user.role === 'admin') {
-                document.body.classList.add('admin-view');
-                document.body.classList.remove('user-view');
-                this.showPage('adminDashboard');
-            } else {
-                document.body.classList.add('user-view');
-                document.body.classList.remove('admin-view');
-                this.showPage('ticketForm');
-            }
+            this.setUserRole(user.role);
         } else {
             this.showLoginPage();
+        }
+    }
+
+    setUserRole(role) {
+        // Remove all role classes
+        document.body.classList.remove('admin-view', 'user-view', 'team-view');
+        
+        // Add appropriate role class
+        switch(role) {
+            case 'admin':
+                document.body.classList.add('admin-view');
+                this.showPage('adminDashboard');
+                break;
+            case 'team':
+                document.body.classList.add('team-view');
+                this.showPage('kanban');
+                break;
+            case 'user':
+                document.body.classList.add('user-view');
+                this.showPage('ticketForm');
+                break;
+        }
+
+        this.updateUserInfo(auth.getCurrentUser());
+    }
+
+    updateUserInfo(user) {
+        const nameElement = document.getElementById('currentUserName');
+        const roleElement = document.getElementById('currentUserRole');
+        
+        if (nameElement && roleElement) {
+            nameElement.textContent = user.username;
+            roleElement.textContent = user.role.toUpperCase();
+            roleElement.className = `user-role-badge ${user.role}`;
         }
     }
 
@@ -98,15 +127,8 @@ class TicketingSystem {
             const success = await auth.authenticate(username, password);
             if (success) {
                 this.showMainApp();
-                if (auth.isAdmin()) {
-                    document.body.classList.add('admin-view');
-                    document.body.classList.remove('user-view');
-                    this.showPage('adminDashboard');
-                } else {
-                    document.body.classList.add('user-view');
-                    document.body.classList.remove('admin-view');
-                    this.showPage('ticketForm');
-                }
+                const user = auth.getCurrentUser();
+                this.setUserRole(user.role);
                 errorDiv.textContent = '';
             } else if (auth.getCurrentUser() && auth.getCurrentUser().isFirstLogin) {
                 errorDiv.textContent = '';
@@ -152,15 +174,10 @@ class TicketingSystem {
         }
 
         if (auth.changePassword(newPassword)) {
-            alert('Password changed successfully');
+            realtimeSystem.showNotification('Password changed successfully', 'success');
             this.showMainApp();
-            if (auth.isAdmin()) {
-                document.body.classList.add('admin-view');
-                this.showPage('adminDashboard');
-            } else {
-                document.body.classList.add('user-view');
-                this.showPage('ticketForm');
-            }
+            const user = auth.getCurrentUser();
+            this.setUserRole(user.role);
         } else {
             alert('Failed to change password');
         }
@@ -182,10 +199,13 @@ class TicketingSystem {
             status: 'Open',
             requestor: user.username,
             requestorEmail: user.email,
+            requestorDepartment: user.department,
             assignedTo: null,
+            assignedAt: null,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            attachments: []
+            attachments: [],
+            emailSent: false
         };
 
         // Handle file attachments
@@ -207,13 +227,14 @@ class TicketingSystem {
         // Send email notification (simulated)
         this.sendEmailNotification(ticketData);
 
-        alert(`Ticket ${ticketData.id} created successfully!`);
+        realtimeSystem.showNotification(`Ticket ${ticketData.id} created successfully!`, 'success');
         document.getElementById('newTicketForm').reset();
         this.showPage('myTickets');
     }
 
     sendEmailNotification(ticket) {
         console.log(`Email sent to ${ticket.supervisor} for ticket ${ticket.id}`);
+        // In real implementation, this would integrate with email service
     }
 
     handleAddUser() {
@@ -226,32 +247,44 @@ class TicketingSystem {
             };
 
             auth.addUser(userData);
-            this.showNotification('User added successfully', 'success');
+            realtimeSystem.showNotification('User added successfully', 'success');
             document.getElementById('addUserForm').reset();
             this.closeModal('addUserModal');
             this.loadUsersList();
         } catch (error) {
-            this.showNotification(error.message, 'error');
+            realtimeSystem.showNotification(error.message, 'error');
         }
     }
 
     handleAssignTicket() {
         const ticketId = this.currentAssignTicket;
         const assignTo = document.getElementById('assignTo').value;
+        const notes = document.getElementById('assignNotes').value;
 
         if (!ticketId || !assignTo) return;
 
         const ticket = this.tickets.find(t => t.id === ticketId);
-        if (ticket) {
+        const assignedUser = auth.getUsers().find(u => u.username === assignTo);
+        
+        if (ticket && assignedUser) {
             ticket.assignedTo = assignTo;
+            ticket.assignedAt = new Date().toISOString();
             ticket.status = 'In Progress';
             ticket.updatedAt = new Date().toISOString();
-            this.saveTickets();
+            ticket.assignmentNotes = notes;
             
+            this.saveTickets();
             this.closeModal('assignModal');
             this.refreshCurrentView();
             
-            this.showNotification(`Ticket ${ticketId} assigned to ${assignTo}`, 'success');
+            // Send email notification to assigned team member
+            if (assignedUser.role === 'team' || assignedUser.role === 'admin') {
+                realtimeSystem.sendEmailNotification(ticket, assignedUser);
+                ticket.emailSent = true;
+            }
+            
+            realtimeSystem.showNotification(`Ticket ${ticketId} assigned to ${assignTo}`, 'success');
+            realtimeSystem.broadcastUpdate('ticket_assigned', { ticketId, assignTo });
         }
     }
 
@@ -286,12 +319,18 @@ class TicketingSystem {
         // Update button states and load page-specific data
         switch(pageId) {
             case 'myTickets':
-                document.getElementById('myTicketsBtn').classList.add('active');
-                this.refreshTicketsList();
+                const btn = document.getElementById('myTicketsBtn');
+                if (btn) btn.classList.add('active');
+                this.loadMyTicketsPage();
                 break;
             case 'adminDashboard':
                 this.loadDashboard();
-                this.refreshKanban();
+                this.refreshKanban('admin');
+                break;
+            case 'kanban':
+                const kanbanBtn = document.getElementById('kanbanBtn');
+                if (kanbanBtn) kanbanBtn.classList.add('active');
+                this.refreshKanban('team');
                 break;
             case 'userManagement':
                 document.getElementById('userManagementBtn').classList.add('active');
@@ -307,21 +346,55 @@ class TicketingSystem {
         }
     }
 
+    loadMyTicketsPage() {
+        const user = auth.getCurrentUser();
+        const isAdmin = auth.isAdmin();
+        const isTeam = auth.isTeamMember();
+        
+        // Update page title based on role
+        const titleElement = document.getElementById('ticketsPageTitle');
+        if (titleElement) {
+            if (isAdmin) {
+                titleElement.textContent = 'All Tickets';
+            } else if (isTeam) {
+                titleElement.textContent = this.showOnlyMyTickets ? 'My Assigned Tickets' : 'All Tickets';
+            } else {
+                titleElement.textContent = 'My Tickets';
+            }
+        }
+        
+        this.refreshTicketsList();
+    }
+
     refreshCurrentView() {
         const activePages = document.querySelectorAll('.content-page.active');
         if (activePages.length > 0) {
             const pageId = activePages[0].id;
-            this.showPage(pageId);
+            if (pageId === 'kanban') {
+                this.refreshKanban(auth.isAdmin() ? 'admin' : 'team');
+            } else {
+                this.showPage(pageId);
+            }
         }
     }
 
     refreshTicketsList() {
         const user = auth.getCurrentUser();
         const isAdmin = auth.isAdmin();
+        const isTeam = auth.isTeamMember();
         
-        let ticketsToShow = this.tickets;
-        if (!isAdmin) {
-            ticketsToShow = this.tickets.filter(t => t.requestor === user.username);
+        let ticketsToShow = [];
+        
+        if (isAdmin) {
+            ticketsToShow = this.tickets; // Admin sees all tickets
+        } else if (isTeam) {
+            if (this.showOnlyMyTickets) {
+                ticketsToShow = this.tickets.filter(t => t.assignedTo === user.username);
+            } else {
+                ticketsToShow = this.tickets; // Team members can see all tickets
+            }
+        } else {
+            ticketsToShow = this.tickets.filter(t => t.requestor === user.username); // Users see only their tickets
         }
 
         // Apply status filter
@@ -334,7 +407,7 @@ class TicketingSystem {
         ticketsList.innerHTML = '';
 
         if (ticketsToShow.length === 0) {
-            ticketsList.innerHTML = '<p class="no-tickets">No tickets found.</p>';
+            ticketsList.innerHTML = '<div class="no-tickets">No tickets found.</div>';
             return;
         }
 
@@ -344,7 +417,7 @@ class TicketingSystem {
         });
 
         // Check for overdue tickets
-        if (isAdmin) {
+        if (isAdmin || isTeam) {
             this.checkOverdueTickets();
         }
     }
@@ -357,15 +430,21 @@ class TicketingSystem {
         const hoursElapsed = (new Date() - timeCreated) / (1000 * 60 * 60);
         const isOverdue = hoursElapsed > this.timeToResolve[ticket.severity] && ticket.status !== 'Closed';
         
+        const user = auth.getCurrentUser();
+        const isMyTicket = ticket.assignedTo === user.username;
+        const canEdit = auth.isAdmin() || (auth.isTeamMember() && isMyTicket);
+        
         card.innerHTML = `
             <div class="ticket-header">
                 <span class="ticket-id">${ticket.id}</span>
                 <span class="ticket-status status-${ticket.status.toLowerCase().replace(' ', '-')}">${ticket.status}</span>
+                ${ticket.emailSent ? '<span class="email-sent-indicator">📧</span>' : ''}
             </div>
             <h4>${ticket.type}</h4>
             <p><strong>Department:</strong> ${ticket.department}</p>
             <p><strong>Severity:</strong> ${ticket.severity}</p>
             <p><strong>Location:</strong> ${ticket.location}</p>
+            <p><strong>Requestor:</strong> ${ticket.requestor}</p>
             <p><strong>Created:</strong> ${timeCreated.toLocaleString()}</p>
             ${ticket.assignedTo ? `<p><strong>Assigned to:</strong> ${ticket.assignedTo}</p>` : ''}
             ${isOverdue ? '<div class="overdue-warning">⚠️ OVERDUE</div>' : ''}
@@ -376,16 +455,42 @@ class TicketingSystem {
                     <button onclick="ticketSystem.showAssignModal('${ticket.id}')" class="btn btn-warning">Assign</button>
                     <button onclick="ticketSystem.changeSeverity('${ticket.id}')" class="btn btn-warning">Change Severity</button>
                 ` : ''}
-                ${ticket.status === 'Closed' && ticket.requestor === auth.getCurrentUser().username ? `
+                ${ticket.status === 'Resolved' && auth.isAdmin() ? `
+                    <button onclick="ticketSystem.closeTicket('${ticket.id}')" class="btn btn-success">Close Ticket</button>
+                ` : ''}
+                ${ticket.status === 'Closed' && ticket.requestor === user.username ? `
                     <button onclick="ticketSystem.reopenTicket('${ticket.id}')" class="btn btn-danger">Reopen</button>
                 ` : ''}
-                ${ticket.status !== 'Closed' && (auth.isAdmin() || ticket.assignedTo === auth.getCurrentUser().username) ? `
-                    <button onclick="ticketSystem.closeTicket('${ticket.id}')" class="btn btn-success">Close</button>
+                ${auth.isTeamMember() && isMyTicket && ticket.status === 'In Progress' ? `
+                    <button onclick="ticketSystem.resolveTicket('${ticket.id}')" class="btn btn-success">Mark as Resolved</button>
                 ` : ''}
             </div>
         `;
         
         return card;
+    }
+
+    resolveTicket(ticketId) {
+        const ticket = this.tickets.find(t => t.id === ticketId);
+        const user = auth.getCurrentUser();
+        
+        if (!ticket || ticket.assignedTo !== user.username) {
+            realtimeSystem.showNotification('You can only resolve tickets assigned to you', 'error');
+            return;
+        }
+
+        if (confirm(`Are you sure you want to mark ticket ${ticketId} as resolved?`)) {
+            ticket.status = 'Resolved';
+            ticket.resolvedAt = new Date().toISOString();
+            ticket.updatedAt = new Date().toISOString();
+            ticket.resolvedBy = user.username;
+            
+            this.saveTickets();
+            this.refreshCurrentView();
+            
+            realtimeSystem.showNotification(`Ticket ${ticketId} marked as resolved`, 'success');
+            realtimeSystem.broadcastUpdate('ticket_resolved', { ticketId, resolvedBy: user.username });
+        }
     }
 
     viewTicketDetails(ticketId) {
@@ -402,18 +507,27 @@ class TicketingSystem {
                 <p><strong>Severity:</strong> ${ticket.severity}</p>
                 <p><strong>Status:</strong> ${ticket.status}</p>
                 <p><strong>Department:</strong> ${ticket.department}</p>
-                <p><strong>Requestor:</strong> ${ticket.requestor}</p>
+                <p><strong>Requestor:</strong> ${ticket.requestor} (${ticket.requestorDepartment})</p>
                 <p><strong>Employee ID:</strong> ${ticket.employeeId}</p>
                 <p><strong>Location:</strong> ${ticket.location}</p>
                 <p><strong>Supervisor:</strong> ${ticket.supervisor}</p>
                 <p><strong>Created:</strong> ${new Date(ticket.createdAt).toLocaleString()}</p>
                 <p><strong>Last Updated:</strong> ${new Date(ticket.updatedAt).toLocaleString()}</p>
-                ${ticket.assignedTo ? `<p><strong>Assigned to:</strong> ${ticket.assignedTo}</p>` : '<p><strong>Assigned to:</strong> Unassigned</p>'}
+                <p><strong>Assigned to:</strong> ${ticket.assignedTo || 'Unassigned'}</p>
+                ${ticket.assignedAt ? `<p><strong>Assigned at:</strong> ${new Date(ticket.assignedAt).toLocaleString()}</p>` : ''}
+                ${ticket.resolvedAt ? `<p><strong>Resolved at:</strong> ${new Date(ticket.resolvedAt).toLocaleString()}</p>` : ''}
+                ${ticket.resolvedBy ? `<p><strong>Resolved by:</strong> ${ticket.resolvedBy}</p>` : ''}
             </div>
             <div class="description-section" style="margin: 20px 0;">
                 <h4>Description:</h4>
                 <p style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px;">${ticket.description}</p>
             </div>
+            ${ticket.assignmentNotes ? `
+                <div class="notes-section" style="margin: 20px 0;">
+                    <h4>Assignment Notes:</h4>
+                    <p style="background: #fff3cd; padding: 15px; border-radius: 5px; margin-top: 10px;">${ticket.assignmentNotes}</p>
+                </div>
+            ` : ''}
             ${ticket.attachments.length > 0 ? `
                 <div class="attachments-section" style="margin: 20px 0;">
                     <h4>Attachments:</h4>
@@ -430,10 +544,10 @@ class TicketingSystem {
         const modal = document.getElementById('assignModal');
         const select = document.getElementById('assignTo');
         
-        // Populate team members
-        select.innerHTML = '<option value="">Select Team Member</option>';
-        const users = auth.getUsers().filter(u => u.role === 'user' || u.role === 'admin');
-        users.forEach(user => {
+        // Populate IT team members only
+        select.innerHTML = '<option value="">Select IT Team Member</option>';
+        const teamMembers = auth.getTeamMembers();
+        teamMembers.forEach(user => {
             select.innerHTML += `<option value="${user.username}">${user.username} (${user.department})</option>`;
         });
         
@@ -452,7 +566,7 @@ class TicketingSystem {
             ticket.updatedAt = new Date().toISOString();
             this.saveTickets();
             this.refreshCurrentView();
-            this.showNotification(`Ticket ${ticketId} severity changed to ${newSeverity}`, 'success');
+            realtimeSystem.showNotification(`Ticket ${ticketId} severity changed to ${newSeverity}`, 'success');
         }
     }
 
@@ -460,12 +574,21 @@ class TicketingSystem {
         const ticket = this.tickets.find(t => t.id === ticketId);
         if (!ticket) return;
 
+        if (ticket.status !== 'Resolved') {
+            realtimeSystem.showNotification('Only resolved tickets can be closed', 'error');
+            return;
+        }
+
         if (confirm(`Are you sure you want to close ticket ${ticketId}?`)) {
             ticket.status = 'Closed';
+            ticket.closedAt = new Date().toISOString();
             ticket.updatedAt = new Date().toISOString();
+            ticket.closedBy = auth.getCurrentUser().username;
+            
             this.saveTickets();
             this.refreshCurrentView();
-            this.showNotification(`Ticket ${ticketId} has been closed`, 'success');
+            realtimeSystem.showNotification(`Ticket ${ticketId} has been closed`, 'success');
+            realtimeSystem.broadcastUpdate('ticket_closed', { ticketId });
         }
     }
 
@@ -475,11 +598,29 @@ class TicketingSystem {
 
         if (confirm(`Are you sure you want to reopen ticket ${ticketId}?`)) {
             ticket.status = 'Open';
+            ticket.reopenedAt = new Date().toISOString();
             ticket.updatedAt = new Date().toISOString();
+            
+            // Clear resolved/closed timestamps
+            delete ticket.resolvedAt;
+            delete ticket.closedAt;
+            delete ticket.resolvedBy;
+            delete ticket.closedBy;
+            
             this.saveTickets();
             this.refreshCurrentView();
-            this.showNotification(`Ticket ${ticketId} has been reopened`, 'success');
+            realtimeSystem.showNotification(`Ticket ${ticketId} has been reopened`, 'success');
         }
+    }
+
+    showMyAssignedTickets() {
+        this.showOnlyMyTickets = true;
+        this.refreshTicketsList();
+    }
+
+    showAllTickets() {
+        this.showOnlyMyTickets = false;
+        this.refreshTicketsList();
     }
 
     checkOverdueTickets() {
@@ -493,22 +634,30 @@ class TicketingSystem {
 
         if (overdueTickets.length > 0) {
             console.log(`Alert: ${overdueTickets.length} overdue tickets found`);
-            // You could show a notification here
         }
     }
 
     loadUsersList() {
         const usersList = document.getElementById('usersList');
         const users = auth.getUsers();
+        const counts = auth.getUserCounts();
+        
+        // Update user counts
+        document.getElementById('adminCount').textContent = counts.admin;
+        document.getElementById('teamCount').textContent = counts.team;
+        document.getElementById('regularUserCount').textContent = counts.user;
         
         usersList.innerHTML = users.map(user => `
-            <div class="user-card">
-                <h4>${user.username}</h4>
-                <p><strong>Email:</strong> ${user.email}</p>
-                <p><strong>Department:</strong> ${user.department}</p>
-                <p><strong>Role:</strong> ${user.role}</p>
-                <div class="user-actions" style="margin-top: 10px;">
-                    <button onclick="ticketSystem.deleteUser('${user.username}')" class="btn btn-danger btn-small">Delete</button>
+            <div class="user-card ${user.role}-user">
+                <div class="user-info">
+                    <h4>${user.username}</h4>
+                    <p><strong>Email:</strong> ${user.email}</p>
+                    <p><strong>Department:</strong> ${user.department}</p>
+                    <p><strong>Role:</strong> ${user.role.toUpperCase()}</p>
+                </div>
+                <div class="user-actions">
+                    <button onclick="ticketSystem.deleteUser('${user.username}')" class="btn btn-danger btn-small" 
+                            ${user.username === 'admin' ? 'disabled' : ''}>Delete</button>
                 </div>
             </div>
         `).join('');
@@ -516,14 +665,18 @@ class TicketingSystem {
 
     deleteUser(username) {
         if (username === 'admin') {
-            alert('Cannot delete admin user');
+            realtimeSystem.showNotification('Cannot delete admin user', 'error');
             return;
         }
         
         if (confirm(`Are you sure you want to delete user ${username}?`)) {
-            auth.deleteUser(username);
-            this.showNotification('User deleted successfully', 'success');
-            this.loadUsersList();
+            try {
+                auth.deleteUser(username);
+                realtimeSystem.showNotification('User deleted successfully', 'success');
+                this.loadUsersList();
+            } catch (error) {
+                realtimeSystem.showNotification(error.message, 'error');
+            }
         }
     }
 
@@ -566,38 +719,9 @@ class TicketingSystem {
         });
     }
 
-    showNotification(message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${type === 'success' ? '#27ae60' : '#e74c3c'};
-            color: white;
-            padding: 15px 20px;
-            border-radius: 5px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            z-index: 1001;
-            animation: slideIn 0.3s ease;
-        `;
-        
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                if (document.body.contains(notification)) {
-                    document.body.removeChild(notification);
-                }
-            }, 300);
-        }, 3000);
-    }
-
     logout() {
         auth.logout();
-        document.body.classList.remove('admin-view', 'user-view');
+        document.body.classList.remove('admin-view', 'user-view', 'team-view');
         this.showLoginPage();
     }
 }
@@ -642,7 +766,7 @@ function uploadLogo() {
     
     if (file) {
         if (file.size > 2 * 1024 * 1024) { // 2MB limit
-            alert('File size should be less than 2MB');
+            realtimeSystem.showNotification('File size should be less than 2MB', 'error');
             return;
         }
         
@@ -651,7 +775,7 @@ function uploadLogo() {
             const logoUrl = e.target.result;
             localStorage.setItem('companyLogo', logoUrl);
             ticketSystem.updateCompanyBranding();
-            ticketSystem.showNotification('Logo updated successfully', 'success');
+            realtimeSystem.showNotification('Logo updated successfully', 'success');
         };
         reader.readAsDataURL(file);
     }
@@ -662,7 +786,7 @@ function updateCompanyName() {
     if (newName && newName.trim()) {
         localStorage.setItem('companyName', newName.trim());
         ticketSystem.updateCompanyBranding();
-        ticketSystem.showNotification('Company name updated successfully', 'success');
+        realtimeSystem.showNotification('Company name updated successfully', 'success');
     }
 }
 
@@ -684,30 +808,26 @@ function exportReport() {
     ticketSystem.exportReport();
 }
 
+function refreshTicketsList() {
+    ticketSystem.refreshTicketsList();
+}
+
+function refreshKanban() {
+    const user = auth.getCurrentUser();
+    if (user.role === 'admin') {
+        ticketSystem.refreshKanban('admin');
+    } else {
+        ticketSystem.refreshKanban('team');
+    }
+}
+
+function showMyAssignedTickets() {
+    ticketSystem.showMyAssignedTickets();
+}
+
+function showAllTickets() {
+    ticketSystem.showAllTickets();
+}
+
 // Initialize the application
 const ticketSystem = new TicketingSystem();
-
-// Add CSS for notifications
-const notificationStyles = document.createElement('style');
-notificationStyles.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    
-    @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-    
-    .no-tickets {
-        text-align: center;
-        color: #666;
-        font-style: italic;
-        padding: 40px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    }
-`;
-document.head.appendChild(notificationStyles);
