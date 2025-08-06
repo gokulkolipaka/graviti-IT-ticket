@@ -11,7 +11,7 @@ class AuthSystem {
                 {
                     username: 'admin',
                     password: 'admin123',
-                    email: '',
+                    email: 'admin@company.com',
                     role: 'admin',
                     department: 'IT',
                     isFirstLogin: true
@@ -19,7 +19,7 @@ class AuthSystem {
                 {
                     username: 'itteam1',
                     password: 'team123',
-                    email: '',
+                    email: 'itteam1@company.com',
                     role: 'team',
                     department: 'IT',
                     isFirstLogin: false
@@ -27,7 +27,7 @@ class AuthSystem {
                 {
                     username: 'user1',
                     password: 'user123',
-                    email: '',
+                    email: 'user1@company.com',
                     role: 'user',
                     department: 'HR',
                     isFirstLogin: false
