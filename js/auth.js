@@ -11,7 +11,7 @@ class AuthSystem {
                 {
                     username: 'admin',
                     password: 'admin123',
-                    email: 'admin@company.com',
+                    email: 'admin@techsupport.com',
                     role: 'admin',
                     department: 'IT',
                     isFirstLogin: true
@@ -19,18 +19,38 @@ class AuthSystem {
                 {
                     username: 'itteam1',
                     password: 'team123',
-                    email: 'itteam1@company.com',
+                    email: 'john.doe@techsupport.com',
                     role: 'team',
                     department: 'IT',
-                    isFirstLogin: false
+                    isFirstLogin: false,
+                    fullName: 'John Doe'
+                },
+                {
+                    username: 'itteam2',
+                    password: 'team123',
+                    email: 'jane.smith@techsupport.com',
+                    role: 'team',
+                    department: 'IT',
+                    isFirstLogin: false,
+                    fullName: 'Jane Smith'
                 },
                 {
                     username: 'user1',
                     password: 'user123',
-                    email: 'user1@company.com',
+                    email: 'alice.johnson@company.com',
                     role: 'user',
                     department: 'HR',
-                    isFirstLogin: false
+                    isFirstLogin: false,
+                    fullName: 'Alice Johnson'
+                },
+                {
+                    username: 'user2',
+                    password: 'user123',
+                    email: 'bob.wilson@company.com',
+                    role: 'user',
+                    department: 'Finance',
+                    isFirstLogin: false,
+                    fullName: 'Bob Wilson'
                 }
             ];
             localStorage.setItem('users', JSON.stringify(defaultUsers));
@@ -38,7 +58,6 @@ class AuthSystem {
     }
 
     async authenticate(username, password) {
-        // In a real implementation, this would connect to LDAP
         const users = JSON.parse(localStorage.getItem('users') || '[]');
         const user = users.find(u => u.username === username && u.password === password);
         
@@ -46,8 +65,7 @@ class AuthSystem {
             this.currentUser = user;
             localStorage.setItem('currentUser', JSON.stringify(user));
             
-            // Check if first login for admin
-            if (user.isFirstLogin && user.role === 'admin') {
+            if (user.isFirstLogin && (user.role === 'admin' || user.role === 'team')) {
                 this.showPasswordChangeModal();
                 return false;
             }
@@ -87,7 +105,6 @@ class AuthSystem {
         const user = users.find(u => u.username === username && u.email === email);
         
         if (user) {
-            // Generate temporary password
             const tempPassword = 'temp' + Math.random().toString(36).substr(2, 8);
             const userIndex = users.findIndex(u => u.username === username);
             users[userIndex].password = tempPassword;
@@ -95,7 +112,6 @@ class AuthSystem {
             
             localStorage.setItem('users', JSON.stringify(users));
             
-            // In real implementation, this would send email
             alert(`Password reset successful! Your temporary password is: ${tempPassword}\nPlease change it after logging in.`);
             return true;
         }
@@ -129,6 +145,22 @@ class AuthSystem {
         return this.currentUser ? this.currentUser.role : null;
     }
 
+    canAssignTickets() {
+        return this.isAdmin();
+    }
+
+    canResolveTickets() {
+        return this.isAdmin() || this.isTeamMember();
+    }
+
+    canCloseTickets() {
+        return this.isAdmin();
+    }
+
+    canManageUsers() {
+        return this.isAdmin();
+    }
+
     logout() {
         this.currentUser = null;
         localStorage.removeItem('currentUser');
@@ -137,9 +169,12 @@ class AuthSystem {
     addUser(userData) {
         const users = JSON.parse(localStorage.getItem('users') || '[]');
         
-        // Check if username already exists
         if (users.find(u => u.username === userData.username)) {
             throw new Error('Username already exists');
+        }
+
+        if (users.find(u => u.email === userData.email)) {
+            throw new Error('Email already exists');
         }
 
         const newUser = {
@@ -148,6 +183,7 @@ class AuthSystem {
             email: userData.email,
             role: userData.role,
             department: userData.department,
+            fullName: userData.fullName || userData.username,
             isFirstLogin: true
         };
 
@@ -186,15 +222,6 @@ class AuthSystem {
         }
         
         return false;
-    }
-
-    getUserCounts() {
-        const users = this.getUsers();
-        return {
-            admin: users.filter(u => u.role === 'admin').length,
-            team: users.filter(u => u.role === 'team').length,
-            user: users.filter(u => u.role === 'user').length
-        };
     }
 }
 
