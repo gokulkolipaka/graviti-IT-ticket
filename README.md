@@ -1,96 +1,49 @@
 # Support Ticketing System
 
-A comprehensive three-tier support ticketing system with real-time synchronization.
+A comprehensive three-tier support ticketing system with real-time synchronization, built with vanilla JavaScript, HTML5, and CSS3.
 
-## Features
+## 🚀 Features
 
+### Core Functionality
 - **Three-tier user system**: Admin, IT Team Members, Regular Users
-- **Real-time synchronization** across all user types
+- **Real-time synchronization** across all user sessions
 - **Kanban board** with drag-and-drop functionality
-- **Email notifications** for ticket assignments
+- **Email notifications** for ticket assignments (simulated)
 - **Advanced reporting** and analytics
-- **Role-based permissions**
+- **Role-based permissions** and access control
 - **Company branding** customization
+- **Data backup and restore** functionality
 
-## User Roles
+### User Roles & Capabilities
 
-### Admin
-- Full access to all features
-- Can assign tickets to team members
+#### 👨‍💼 Admin Users
+- Full access to all features and data
+- Can assign tickets to IT team members
+- Can change ticket severity and status
 - Can close resolved tickets
-- Access to dashboard and reports
+- Access to dashboard and comprehensive reports
 - User management capabilities
+- System settings and branding control
 
-### IT Team Members
-- Access to Kanban board
+#### 🛠️ IT Team Members  
+- Access to dedicated Kanban board
 - Can resolve assigned tickets (drag from In Progress to Resolved)
 - Receive email notifications when assigned tickets
-- Can view all tickets or filter to assigned tickets
+- Can view all tickets or filter to assigned tickets only
+- Limited administrative functions
 
-### Regular Users
-- Can create new tickets
-- Can view their own tickets
+#### 👤 Regular Users
+- Can create new support tickets
+- Can view and track their own tickets
 - Can reopen closed tickets if needed
 - Limited to ticket creation and status viewing
 
-## Default Login Credentials
+## 🔧 Installation & Setup
 
-- **Admin**: username: `admin`, password: `admin123`
-- **IT Team**: username: `itteam1`, password: `team123`
-- **User**: username: `user1`, password: `user123`
+### Quick Start
+1. Download all project files
+2. Maintain the folder structure as shown below
+3. Deploy to any web server (Apache, Nginx, or simple HTTP server)
+4. Access via web browser
 
-## Installation
-
-1. Download all files
-2. Maintain the folder structure
-3. Deploy to web server
-4. Access via browser
-
-## Configuration
-
-### Company Branding
-- Update company name in the settings
-- Upload your company logo (200x80 pixels recommended)
-- Customize colors in CSS if needed
-
-### LDAP Integration
-- Update `ldap-auth.php` with your LDAP server details
-- Replace placeholder values with actual configuration
-- Test connection with your LDAP administrator
-
-### Email Configuration
-- Currently uses simulated email notifications
-- Integrate with your email service (SMTP, SendGrid, etc.)
-- Update notification functions in `js/realtime.js`
-
-## Dummy Data Examples
-
-### Email Addresses
-- admin@company.com
-- itteam1@company.com  
-- user1@company.com
-- supervisor@company.com
-
-### LDAP Configuration
-- Server: your-ldap-server.com
-- Base DN: dc=yourcompany,dc=com
-- Domain: yourcompany.com
-
-### Company Information
-- Company Name: Your Company Name
-- Default Logo: assets/logo.png
-
-## Browser Compatibility
-
-- Chrome (recommended)
-- Firefox
-- Safari
-- Edge
-
-## License
-
-MIT License
-
-## Support
-
-For issues and questions, please create a GitHub issue or contact your system administrator.
+### Folder Structure
