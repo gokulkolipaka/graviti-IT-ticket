@@ -24,6 +24,10 @@ body {
     padding: 20px;
     max-width: 1400px;
     margin: 0 auto;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
 }
 
 .content-page.active {
@@ -82,8 +86,18 @@ body {
 
 .login-form h2 {
     text-align: center;
+    margin-bottom: 10px;
+    color: #667eea;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.login-form h3 {
+    text-align: center;
     margin-bottom: 30px;
     color: #333;
+    font-size: 18px;
+    font-weight: normal;
 }
 
 .login-form input {
@@ -130,25 +144,6 @@ body {
 
 .forgot-password a:hover {
     text-decoration: underline;
-}
-
-.login-help {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 5px;
-    border-left: 4px solid #667eea;
-}
-
-.login-help h4 {
-    color: #333;
-    margin-bottom: 10px;
-}
-
-.login-help p {
-    margin: 5px 0;
-    font-size: 14px;
-    color: #666;
 }
 
 /* Header */
@@ -211,6 +206,7 @@ body {
     gap: 10px;
     flex: 1;
     justify-content: flex-end;
+    flex-wrap: wrap;
 }
 
 .nav-btn {
@@ -305,26 +301,7 @@ body {
     display: inline-block;
 }
 
-/* Dashboard */
-.admin-dashboard-container {
-    display: grid;
-    gap: 30px;
-}
-
-.dashboard-section, .kanban-section {
-    background: white;
-    padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.dashboard-section h2, .kanban-section h2 {
-    margin-bottom: 20px;
-    color: #333;
-    border-bottom: 3px solid #667eea;
-    padding-bottom: 10px;
-}
-
+/* Dashboard Styles */
 .dashboard-filters {
     margin-bottom: 20px;
     display: flex;
@@ -525,6 +502,114 @@ body {
     background: #27ae60; 
 }
 
+/* Archive Section */
+.archive-controls {
+    margin-bottom: 30px;
+}
+
+.archive-filters {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.archive-filters input,
+.archive-filters select,
+.archive-filters button {
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+}
+
+.archive-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.archive-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.archive-list {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.archived-ticket {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    transition: background 0.3s;
+}
+
+.archived-ticket:hover {
+    background: #f8f9fa;
+}
+
+.archived-ticket:last-child {
+    border-bottom: none;
+}
+
+.archived-ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.archived-ticket-id {
+    font-weight: bold;
+    color: #667eea;
+}
+
+.archived-date {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Backup Modal */
+.backup-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.backup-section h4 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.backup-history {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.backup-item {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.backup-item:last-child {
+    border-bottom: none;
+}
+
 /* Forms */
 .ticket-form {
     background: white;
@@ -598,6 +683,9 @@ body {
     align-items: center;
     gap: 15px;
     flex-wrap: wrap;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
 }
 
 .tickets-filter select {
@@ -676,6 +764,11 @@ body {
     color: white;
 }
 
+.status-archived {
+    background: #95a5a6;
+    color: white;
+}
+
 .severity-high {
     border-left-color: #e74c3c;
 }
@@ -730,10 +823,9 @@ body {
 
 /* Users List */
 .user-stats {
-    background: white;
+    background: #f8f9fa;
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
     margin-bottom: 20px;
     display: flex;
     gap: 30px;
@@ -804,10 +896,9 @@ body {
 
 /* Report Table */
 .report-filters {
-    background: white;
+    background: #f8f9fa;
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
     margin-bottom: 20px;
     display: flex;
     gap: 15px;
@@ -926,6 +1017,9 @@ body {
 /* Settings */
 .settings-section {
     margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
 }
 
 .settings-section h4 {
@@ -1095,7 +1189,8 @@ body {
     
     .tickets-filter,
     .report-filters,
-    .kanban-controls {
+    .kanban-controls,
+    .archive-filters {
         flex-direction: column;
         align-items: stretch;
     }
@@ -1103,6 +1198,11 @@ body {
     .user-stats {
         flex-direction: column;
         gap: 15px;
+    }
+    
+    .archive-actions {
+        justify-content: stretch;
+        flex-direction: column;
     }
 }
 
@@ -1127,6 +1227,10 @@ body {
     .company-name-header {
         margin-left: 0;
         margin-top: 5px;
+    }
+    
+    .archive-stats {
+        grid-template-columns: 1fr;
     }
 }
 
