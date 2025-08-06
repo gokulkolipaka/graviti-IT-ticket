@@ -1,20 +1,20 @@
-// Kanban Board functionality with role-based permissions
-TicketingSystem.prototype.refreshKanban = function(viewType = 'admin') {
+// Kanban Board functionality with three-tier access control
+TicketingSystem.prototype.refreshKanban = function() {
     const user = auth.getCurrentUser();
+    const isAdmin = auth.isAdmin();
+    const isITTeam = auth.isITTeam();
     
-    if (viewType === 'admin') {
-        this.refreshAdminKanban();
-    } else {
-        this.refreshTeamKanban();
-    }
-};
-
-TicketingSystem.prototype.refreshAdminKanban = function() {
+    // Determine which kanban to update based on current page
+    const activePage = document.querySelector('.content-page.active');
+    const isITKanban = activePage && activePage.id === 'kanban';
+    
+    const prefix = isITKanban ? 'it' : '';
+    
     const columns = {
-        'Open': document.getElementById('adminOpenColumn'),
-        'In Progress': document.getElementById('adminInProgressColumn'),
-        'Resolved': document.getElementById('adminResolvedColumn'),
-        'Closed': document.getElementById('adminClosedColumn')
+        'Open': document.getElementById(`${prefix}OpenColumn`),
+        'In Progress': document.getElementById(`${prefix}InProgressColumn`),
+        'Resolved': document.getElementById(`${prefix}ResolvedColumn`),
+        'Closed': document.getElementById(`${prefix}ClosedColumn`)
     };
 
     // Clear all columns
@@ -30,65 +30,15 @@ TicketingSystem.prototype.refreshAdminKanban = function() {
         'Closed': 0
     };
 
-    // Populate tickets
-    this.tickets.forEach(ticket => {
-        counts[ticket.status] = (counts[ticket.status] || 0) + 1;
-        const column = columns[ticket.status];
-        if (column) {
-            const ticketCard = this.createKanbanCard(ticket, 'admin');
-            column.appendChild(ticketCard);
-        }
-    });
-
-    // Update count badges
-    if (document.getElementById('adminOpenCount')) document.getElementById('adminOpenCount').textContent = counts['Open'];
-    if (document.getElementById('adminProgressCount')) document.getElementById('adminProgressCount').textContent = counts['In Progress'];
-    if (document.getElementById('adminResolvedCount')) document.getElementById('adminResolvedCount').textContent = counts['Resolved'];
-    if (document.getElementById('adminClosedCount')) document.getElementById('adminClosedCount').textContent = counts['Closed'];
-
-    // Initialize drag and drop for admin (all columns)
-    Object.keys(columns).forEach(status => {
-        if (columns[status]) {
-            new Sortable(columns[status], {
-                group: 'admin-kanban',
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                chosenClass: 'sortable-chosen',
-                dragClass: 'sortable-drag',
-                onEnd: (evt) => {
-                    this.handleKanbanMove(evt, 'admin');
-                }
-            });
-        }
-    });
-};
-
-TicketingSystem.prototype.refreshTeamKanban = function() {
-    const user = auth.getCurrentUser();
-    const columns = {
-        'Open': document.getElementById('teamOpenColumn'),
-        'In Progress': document.getElementById('teamInProgressColumn'),
-        'Resolved': document.getElementById('teamResolvedColumn'),
-        'Closed': document.getElementById('teamClosedColumn')
-    };
-
-    // Clear all columns
-    Object.values(columns).forEach(column => {
-        if (column) column.innerHTML = '';
-    });
-
-    // Update counts
-    const counts = {
-        'Open': 0,
-        'In Progress': 0,
-        'Resolved': 0,
-        'Closed': 0
-    };
-
-    // Filter tickets based on showOnlyMyTickets flag
+    // Filter tickets based on user role and current view
     let ticketsToShow = this.tickets;
-    if (this.showOnlyMyTickets) {
-        ticketsToShow = this.tickets.filter(ticket => ticket.assignedTo === user.username);
+    
+    if (isITKanban && isITTeam && !isAdmin) {
+        // IT team members see only their assigned tickets or unassigned open tickets
+        ticketsToShow = this.tickets.filter(ticket => 
+            ticket.assignedTo === user.username || 
+            (ticket.status === 'Open' && !ticket.assignedTo)
+        );
     }
 
     // Populate tickets
@@ -96,75 +46,97 @@ TicketingSystem.prototype.refreshTeamKanban = function() {
         counts[ticket.status] = (counts[ticket.status] || 0) + 1;
         const column = columns[ticket.status];
         if (column) {
-            const ticketCard = this.createKanbanCard(ticket, 'team');
+            const ticketCard = this.createKanbanCard(ticket, isITKanban);
             column.appendChild(ticketCard);
         }
     });
 
     // Update count badges
-    if (document.getElementById('teamOpenCount')) document.getElementById('teamOpenCount').textContent = counts['Open'];
-    if (document.getElementById('teamProgressCount')) document.getElementById('teamProgressCount').textContent = counts['In Progress'];
-    if (document.getElementById('teamResolvedCount')) document.getElementById('teamResolvedCount').textContent = counts['Resolved'];
-    if (document.getElementById('teamClosedCount')) document.getElementById('teamClosedCount').textContent = counts['Closed'];
+    const countElements = {
+        'Open': document.getElementById(`${prefix}openCount`),
+        'In Progress': document.getElementById(`${prefix}progressCount`),
+        'Resolved': document.getElementById(`${prefix}resolvedCount`),
+        'Closed': document.getElementById(`${prefix}closedCount`)
+    };
 
-    // Initialize drag and drop for team members (only In Progress to Resolved)
-    const inProgressColumn = columns['In Progress'];
-    const resolvedColumn = columns['Resolved'];
-    
-    if (inProgressColumn) {
-        new Sortable(inProgressColumn, {
-            group: {
-                name: 'team-kanban',
-                put: false
-            },
-            animation: 150,
-            ghostClass: 'sortable-ghost',
-            chosenClass: 'sortable-chosen',
-            dragClass: 'sortable-drag',
-            filter: (evt, item) => {
-                const ticketId = item.dataset.ticketId;
-                const ticket = this.tickets.find(t => t.id === ticketId);
-                return !ticket || ticket.assignedTo !== user.username;
-            },
-            onEnd: (evt) => {
-                this.handleKanbanMove(evt, 'team');
+    Object.keys(countElements).forEach(status => {
+        const element = countElements[status];
+        if (element) {
+            element.textContent = counts[status] || 0;
+        }
+    });
+
+    // Initialize drag and drop based on user permissions
+    Object.keys(columns).forEach(status => {
+        if (columns[status]) {
+            const sortableOptions = {
+                group: 'kanban',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                onEnd: (evt) => {
+                    this.handleKanbanMove(evt);
+                }
+            };
+
+            // Restrict drag and drop for non-admin users
+            if (!isAdmin) {
+                if (isITTeam) {
+                    // IT team can only drag their assigned tickets to resolved
+                    sortableOptions.onMove = (evt) => {
+                        const ticketId = evt.dragged.dataset.ticketId;
+                        const ticket = this.tickets.find(t => t.id === ticketId);
+                        const targetStatus = evt.to.parentElement.dataset.status;
+                        
+                        // IT team can move their tickets to resolved, or take unassigned open tickets
+                        if (ticket.assignedTo === user.username || 
+                            (ticket.status === 'Open' && !ticket.assignedTo && targetStatus === 'In Progress')) {
+                            return true;
+                        }
+                        
+                        // Only allow moving to resolved from in progress
+                        if (ticket.assignedTo === user.username && 
+                            ticket.status === 'In Progress' && 
+                            targetStatus === 'Resolved') {
+                            return true;
+                        }
+                        
+                        return false;
+                    };
+                } else {
+                    // Regular users cannot drag tickets
+                    sortableOptions.disabled = true;
+                }
             }
-        });
-    }
 
-    if (resolvedColumn) {
-        new Sortable(resolvedColumn, {
-            group: {
-                name: 'team-kanban',
-                pull: false
-            },
-            animation: 150,
-            ghostClass: 'sortable-ghost',
-            chosenClass: 'sortable-chosen',
-            dragClass: 'sortable-drag'
-        });
-    }
+            new Sortable(columns[status], sortableOptions);
+        }
+    });
 };
 
-TicketingSystem.prototype.createKanbanCard = function(ticket, viewType = 'admin') {
+TicketingSystem.prototype.createKanbanCard = function(ticket, isITView = false) {
     const card = document.createElement('div');
-    const user = auth.getCurrentUser();
-    const isAssignedToMe = ticket.assignedTo === user.username;
-    
-    card.className = `kanban-ticket ${isAssignedToMe ? 'assigned-to-me' : ''}`;
+    card.className = 'kanban-ticket';
     card.dataset.ticketId = ticket.id;
     
+    const user = auth.getCurrentUser();
     const timeCreated = new Date(ticket.createdAt);
     const hoursElapsed = (new Date() - timeCreated) / (1000 * 60 * 60);
     const isOverdue = hoursElapsed > this.timeToResolve[ticket.severity] && ticket.status !== 'Closed';
     
+    // Add visual indicators for ticket ownership
+    if (ticket.assignedTo === user.username) {
+        card.classList.add('assigned-to-me');
+    }
+    if (ticket.requestor === user.username) {
+        card.classList.add('my-ticket');
+    }
+    
     card.innerHTML = `
         <div class="kanban-ticket-header">
             <strong>${ticket.id}</strong>
-            <div>
-                <span class="severity-badge severity-${ticket.severity.toLowerCase()}">${ticket.severity}</span>
-                ${ticket.emailSent ? '<span class="email-sent-indicator">📧</span>' : ''}
-            </div>
+            <span class="severity-badge severity-${ticket.severity.toLowerCase()}">${ticket.severity}</span>
         </div>
         <div class="kanban-ticket-title">${ticket.type}</div>
         <div class="kanban-ticket-description">${ticket.description.substring(0, 60)}${ticket.description.length > 60 ? '...' : ''}</div>
@@ -173,55 +145,78 @@ TicketingSystem.prototype.createKanbanCard = function(ticket, viewType = 'admin'
             <div>🏢 ${ticket.department}</div>
             ${ticket.assignedTo ? `<div>🔧 ${ticket.assignedTo}</div>` : '<div>🔧 Unassigned</div>'}
             ${isOverdue ? '<div style="color: red; font-weight: bold;">⚠️ OVERDUE</div>' : ''}
-            ${isAssignedToMe ? '<div style="color: green; font-weight: bold;">👍 Mine</div>' : ''}
         </div>
         <div class="kanban-ticket-actions">
             <button onclick="ticketSystem.viewTicketDetails('${ticket.id}')" class="btn-small">View</button>
-            ${viewType === 'admin' ? `<button onclick="ticketSystem.showAssignModal('${ticket.id}')" class="btn-small">Assign</button>` : ''}
-            ${viewType === 'team' && isAssignedToMe && ticket.status === 'In Progress' ? `<button onclick="ticketSystem.resolveTicket('${ticket.id}')" class="btn-small btn-success">Resolve</button>` : ''}
+            ${auth.isAdmin() ? `<button onclick="ticketSystem.showAssignModal('${ticket.id}')" class="btn-small">Assign</button>` : ''}
+            ${(auth.isITTeam() && ticket.assignedTo === user.username && ticket.status === 'In Progress') ? `
+                <button onclick="ticketSystem.resolveTicket('${ticket.id}')" class="btn-small btn-success">Resolve</button>
+            ` : ''}
         </div>
     `;
     
     return card;
 };
 
-TicketingSystem.prototype.handleKanbanMove = function(evt, viewType) {
+TicketingSystem.prototype.handleKanbanMove = function(evt) {
     const ticketId = evt.item.dataset.ticketId;
     const newStatus = evt.to.parentElement.dataset.status;
     const user = auth.getCurrentUser();
     
     const ticket = this.tickets.find(t => t.id === ticketId);
-    if (!ticket || ticket.status === newStatus) return;
+    if (ticket && ticket.status !== newStatus) {
+        // Validate permissions and transitions
+        const canMove = this.validateKanbanMove(ticket, newStatus, user);
+        
+        if (canMove) {
+            const oldStatus = ticket.status;
+            ticket.status = newStatus;
+            ticket.updatedAt = new Date().toISOString();
+            
+            // Auto-assign ticket if IT team member moves open ticket to in progress
+            if (oldStatus === 'Open' && newStatus === 'In Progress' && !ticket.assignedTo && auth.isITTeam()) {
+                ticket.assignedTo = user.username;
+            }
+            
+            this.saveTickets();
+            this.showNotification(`Ticket ${ticketId} moved to ${newStatus}`, 'success');
+            this.refreshKanban();
+        } else {
+            this.showNotification(`You don't have permission to move this ticket`, 'error');
+            this.refreshKanban(); // Revert the move
+        }
+    }
+};
+
+TicketingSystem.prototype.validateKanbanMove = function(ticket, newStatus, user) {
+    const isAdmin = auth.isAdmin();
+    const isITTeam = auth.isITTeam();
     
-    // Validate permissions
-    if (viewType === 'team') {
-        // Team members can only move their assigned tickets from In Progress to Resolved
-        if (ticket.assignedTo !== user.username) {
-            realtimeSystem.showNotification('You can only move tickets assigned to you', 'error');
-            this.refreshKanban('team');
-            return;
+    // Admin can move any ticket anywhere
+    if (isAdmin) return true;
+    
+    // IT team member validations
+    if (isITTeam) {
+        // Can take unassigned open tickets
+        if (ticket.status === 'Open' && !ticket.assignedTo && newStatus === 'In Progress') {
+            return true;
         }
         
-        if (ticket.status !== 'In Progress' || newStatus !== 'Resolved') {
-            realtimeSystem.showNotification('You can only move tickets from In Progress to Resolved', 'error');
-            this.refreshKanban('team');
-            return;
+        // Can move their assigned tickets from in progress to resolved
+        if (ticket.assignedTo === user.username && 
+            ticket.status === 'In Progress' && 
+            newStatus === 'Resolved') {
+            return true;
+        }
+        
+        // Can move their assigned tickets between in progress and open
+        if (ticket.assignedTo === user.username && 
+            ((ticket.status === 'In Progress' && newStatus === 'Open') ||
+             (ticket.status === 'Open' && newStatus === 'In Progress'))) {
+            return true;
         }
     }
     
-    // Update ticket status
-    ticket.status = newStatus;
-    ticket.updatedAt = new Date().toISOString();
-    
-    if (newStatus === 'Resolved') {
-        ticket.resolvedAt = new Date().toISOString();
-        ticket.resolvedBy = user.username;
-    }
-    
-    this.saveTickets();
-    realtimeSystem.showNotification(`Ticket ${ticketId} moved to ${newStatus}`, 'success');
-    realtimeSystem.broadcastUpdate('ticket_moved', { ticketId, newStatus, movedBy: user.username });
-    
-    // Refresh the appropriate kanban view
-    this.refreshKanban(viewType);
+    // Regular users cannot move tickets
+    return false;
 };
