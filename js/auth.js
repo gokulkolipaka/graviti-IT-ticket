@@ -74,6 +74,27 @@ class AuthSystem {
         return false;
     }
 
+    resetPassword(username, email) {
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const user = users.find(u => u.username === username && u.email === email);
+        
+        if (user) {
+            // Generate temporary password
+            const tempPassword = 'temp' + Math.random().toString(36).substr(2, 8);
+            const userIndex = users.findIndex(u => u.username === username);
+            users[userIndex].password = tempPassword;
+            users[userIndex].isFirstLogin = true;
+            
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            // In real implementation, this would send email
+            alert(`Password reset successful! Your temporary password is: ${tempPassword}\nPlease change it after logging in.`);
+            return true;
+        }
+        
+        return false;
+    }
+
     getCurrentUser() {
         if (!this.currentUser) {
             const stored = localStorage.getItem('currentUser');
@@ -117,6 +138,26 @@ class AuthSystem {
 
     getUsers() {
         return JSON.parse(localStorage.getItem('users') || '[]');
+    }
+
+    deleteUser(username) {
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const filteredUsers = users.filter(u => u.username !== username);
+        localStorage.setItem('users', JSON.stringify(filteredUsers));
+        return true;
+    }
+
+    updateUser(username, userData) {
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const userIndex = users.findIndex(u => u.username === username);
+        
+        if (userIndex !== -1) {
+            users[userIndex] = { ...users[userIndex], ...userData };
+            localStorage.setItem('users', JSON.stringify(users));
+            return true;
+        }
+        
+        return false;
     }
 }
 
