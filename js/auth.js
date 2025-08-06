@@ -1,4 +1,4 @@
-// Authentication and User Management
+// Three-Tier Authentication and User Management
 class AuthSystem {
     constructor() {
         this.currentUser = null;
@@ -15,6 +15,14 @@ class AuthSystem {
                     role: 'admin',
                     department: 'IT',
                     isFirstLogin: true
+                },
+                {
+                    username: 'itteam1',
+                    password: 'team123',
+                    email: 'itteam1@graviti.com',
+                    role: 'team',
+                    department: 'IT',
+                    isFirstLogin: false
                 },
                 {
                     username: 'user1',
@@ -109,6 +117,18 @@ class AuthSystem {
         return this.currentUser && this.currentUser.role === 'admin';
     }
 
+    isTeamMember() {
+        return this.currentUser && this.currentUser.role === 'team';
+    }
+
+    isUser() {
+        return this.currentUser && this.currentUser.role === 'user';
+    }
+
+    getUserRole() {
+        return this.currentUser ? this.currentUser.role : null;
+    }
+
     logout() {
         this.currentUser = null;
         localStorage.removeItem('currentUser');
@@ -140,7 +160,15 @@ class AuthSystem {
         return JSON.parse(localStorage.getItem('users') || '[]');
     }
 
+    getTeamMembers() {
+        return this.getUsers().filter(u => u.role === 'team' || u.role === 'admin');
+    }
+
     deleteUser(username) {
+        if (username === 'admin') {
+            throw new Error('Cannot delete admin user');
+        }
+        
         const users = JSON.parse(localStorage.getItem('users') || '[]');
         const filteredUsers = users.filter(u => u.username !== username);
         localStorage.setItem('users', JSON.stringify(filteredUsers));
@@ -158,6 +186,15 @@ class AuthSystem {
         }
         
         return false;
+    }
+
+    getUserCounts() {
+        const users = this.getUsers();
+        return {
+            admin: users.filter(u => u.role === 'admin').length,
+            team: users.filter(u => u.role === 'team').length,
+            user: users.filter(u => u.role === 'user').length
+        };
     }
 }
 
