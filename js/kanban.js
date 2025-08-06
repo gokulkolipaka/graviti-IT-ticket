@@ -41,10 +41,10 @@ TicketingSystem.prototype.refreshAdminKanban = function() {
     });
 
     // Update count badges
-    document.getElementById('adminOpenCount').textContent = counts['Open'];
-    document.getElementById('adminProgressCount').textContent = counts['In Progress'];
-    document.getElementById('adminResolvedCount').textContent = counts['Resolved'];
-    document.getElementById('adminClosedCount').textContent = counts['Closed'];
+    if (document.getElementById('adminOpenCount')) document.getElementById('adminOpenCount').textContent = counts['Open'];
+    if (document.getElementById('adminProgressCount')) document.getElementById('adminProgressCount').textContent = counts['In Progress'];
+    if (document.getElementById('adminResolvedCount')) document.getElementById('adminResolvedCount').textContent = counts['Resolved'];
+    if (document.getElementById('adminClosedCount')) document.getElementById('adminClosedCount').textContent = counts['Closed'];
 
     // Initialize drag and drop for admin (all columns)
     Object.keys(columns).forEach(status => {
@@ -102,10 +102,10 @@ TicketingSystem.prototype.refreshTeamKanban = function() {
     });
 
     // Update count badges
-    document.getElementById('teamOpenCount').textContent = counts['Open'];
-    document.getElementById('teamProgressCount').textContent = counts['In Progress'];
-    document.getElementById('teamResolvedCount').textContent = counts['Resolved'];
-    document.getElementById('teamClosedCount').textContent = counts['Closed'];
+    if (document.getElementById('teamOpenCount')) document.getElementById('teamOpenCount').textContent = counts['Open'];
+    if (document.getElementById('teamProgressCount')) document.getElementById('teamProgressCount').textContent = counts['In Progress'];
+    if (document.getElementById('teamResolvedCount')) document.getElementById('teamResolvedCount').textContent = counts['Resolved'];
+    if (document.getElementById('teamClosedCount')) document.getElementById('teamClosedCount').textContent = counts['Closed'];
 
     // Initialize drag and drop for team members (only In Progress to Resolved)
     const inProgressColumn = columns['In Progress'];
@@ -115,14 +115,13 @@ TicketingSystem.prototype.refreshTeamKanban = function() {
         new Sortable(inProgressColumn, {
             group: {
                 name: 'team-kanban',
-                put: false // Can't drag items into In Progress
+                put: false
             },
             animation: 150,
             ghostClass: 'sortable-ghost',
             chosenClass: 'sortable-chosen',
             dragClass: 'sortable-drag',
             filter: (evt, item) => {
-                // Only allow dragging tickets assigned to current user
                 const ticketId = item.dataset.ticketId;
                 const ticket = this.tickets.find(t => t.id === ticketId);
                 return !ticket || ticket.assignedTo !== user.username;
@@ -137,7 +136,7 @@ TicketingSystem.prototype.refreshTeamKanban = function() {
         new Sortable(resolvedColumn, {
             group: {
                 name: 'team-kanban',
-                pull: false // Can't drag items out of Resolved
+                pull: false
             },
             animation: 150,
             ghostClass: 'sortable-ghost',
@@ -164,4 +163,65 @@ TicketingSystem.prototype.createKanbanCard = function(ticket, viewType = 'admin'
             <strong>${ticket.id}</strong>
             <div>
                 <span class="severity-badge severity-${ticket.severity.toLowerCase()}">${ticket.severity}</span>
-                ${ticket.emailS
+                ${ticket.emailSent ? '<span class="email-sent-indicator">📧</span>' : ''}
+            </div>
+        </div>
+        <div class="kanban-ticket-title">${ticket.type}</div>
+        <div class="kanban-ticket-description">${ticket.description.substring(0, 60)}${ticket.description.length > 60 ? '...' : ''}</div>
+        <div class="kanban-ticket-meta">
+            <div>👤 ${ticket.requestor}</div>
+            <div>🏢 ${ticket.department}</div>
+            ${ticket.assignedTo ? `<div>🔧 ${ticket.assignedTo}</div>` : '<div>🔧 Unassigned</div>'}
+            ${isOverdue ? '<div style="color: red; font-weight: bold;">⚠️ OVERDUE</div>' : ''}
+            ${isAssignedToMe ? '<div style="color: green; font-weight: bold;">👍 Mine</div>' : ''}
+        </div>
+        <div class="kanban-ticket-actions">
+            <button onclick="ticketSystem.viewTicketDetails('${ticket.id}')" class="btn-small">View</button>
+            ${viewType === 'admin' ? `<button onclick="ticketSystem.showAssignModal('${ticket.id}')" class="btn-small">Assign</button>` : ''}
+            ${viewType === 'team' && isAssignedToMe && ticket.status === 'In Progress' ? `<button onclick="ticketSystem.resolveTicket('${ticket.id}')" class="btn-small btn-success">Resolve</button>` : ''}
+        </div>
+    `;
+    
+    return card;
+};
+
+TicketingSystem.prototype.handleKanbanMove = function(evt, viewType) {
+    const ticketId = evt.item.dataset.ticketId;
+    const newStatus = evt.to.parentElement.dataset.status;
+    const user = auth.getCurrentUser();
+    
+    const ticket = this.tickets.find(t => t.id === ticketId);
+    if (!ticket || ticket.status === newStatus) return;
+    
+    // Validate permissions
+    if (viewType === 'team') {
+        // Team members can only move their assigned tickets from In Progress to Resolved
+        if (ticket.assignedTo !== user.username) {
+            realtimeSystem.showNotification('You can only move tickets assigned to you', 'error');
+            this.refreshKanban('team');
+            return;
+        }
+        
+        if (ticket.status !== 'In Progress' || newStatus !== 'Resolved') {
+            realtimeSystem.showNotification('You can only move tickets from In Progress to Resolved', 'error');
+            this.refreshKanban('team');
+            return;
+        }
+    }
+    
+    // Update ticket status
+    ticket.status = newStatus;
+    ticket.updatedAt = new Date().toISOString();
+    
+    if (newStatus === 'Resolved') {
+        ticket.resolvedAt = new Date().toISOString();
+        ticket.resolvedBy = user.username;
+    }
+    
+    this.saveTickets();
+    realtimeSystem.showNotification(`Ticket ${ticketId} moved to ${newStatus}`, 'success');
+    realtimeSystem.broadcastUpdate('ticket_moved', { ticketId, newStatus, movedBy: user.username });
+    
+    // Refresh the appropriate kanban view
+    this.refreshKanban(viewType);
+};
