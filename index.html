@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TechSupport Pro - Support Ticketing System</title>
+    <title>Support Ticketing System</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
@@ -14,12 +14,12 @@
         <div class="login-container">
             <div class="logo-section">
                 <img id="loginLogo" src="assets/logo.png" alt="Company Logo" class="company-logo-large">
-                <h1 id="loginCompanyName" class="company-name" onclick="editCompanyName()">TechSupport Pro</h1>
+                <h1 id="loginCompanyName" class="company-name" onclick="editCompanyName()">Your Company Name</h1>
             </div>
             <div class="login-form">
                 <h2>Login to Support System</h2>
                 <form id="loginForm">
-                    <input type="text" id="username" placeholder="LDAP Username" required>
+                    <input type="text" id="username" placeholder="Username" required>
                     <input type="password" id="password" placeholder="Password" required>
                     <button type="submit">Login</button>
                 </form>
@@ -27,6 +27,12 @@
                     <a href="#" onclick="showPasswordReset()">Forgot Password?</a>
                 </div>
                 <div id="loginError" class="error-message"></div>
+                <div class="login-help">
+                    <h4>Demo Login Credentials:</h4>
+                    <p><strong>Admin:</strong> admin / admin123</p>
+                    <p><strong>IT Team:</strong> itteam1 / team123</p>
+                    <p><strong>User:</strong> user1 / user123</p>
+                </div>
             </div>
         </div>
     </div>
@@ -64,34 +70,42 @@
         <header class="header">
             <div class="logo-section">
                 <img id="appLogo" src="assets/logo.png" alt="Company Logo" class="company-logo-large">
-                <h1 id="appCompanyName" class="company-name-header">TechSupport Pro</h1>
+                <h1 id="appCompanyName" class="company-name-header">Your Company Name</h1>
             </div>
             <div class="user-info">
-                <span id="userWelcome" class="welcome-text">Welcome, User!</span>
-                <span id="userRole" class="role-badge">User</span>
+                <span id="currentUserName"></span>
+                <span id="currentUserRole" class="user-role-badge"></span>
             </div>
             <nav class="nav-menu">
-                <button id="myTicketsBtn" onclick="showPage('myTickets')" class="nav-btn">My Tickets</button>
-                <button id="kanbanBtn" onclick="showPage('kanban')" class="nav-btn team-only admin-only">Kanban Board</button>
-                <button id="userManagementBtn" onclick="showPage('userManagement')" class="nav-btn admin-only">User Management</button>
-                <button id="reportsBtn" onclick="showPage('reports')" class="nav-btn admin-only">Reports</button>
-                <button onclick="showSettingsModal()" class="nav-btn admin-only">Settings</button>
-                <button onclick="logout()" class="nav-btn logout">Logout</button>
+                <!-- Common Navigation -->
+                <button id="myTicketsBtn" class="nav-btn" data-page="myTickets">My Tickets</button>
+                
+                <!-- IT Team Navigation -->
+                <button id="kanbanBtn" class="nav-btn team-only" data-page="kanban">Ticket Board</button>
+                
+                <!-- Admin Navigation -->
+                <button id="adminDashboardBtn" class="nav-btn admin-only" data-page="adminDashboard">Dashboard</button>
+                <button id="userManagementBtn" class="nav-btn admin-only" data-page="userManagement">User Management</button>
+                <button id="reportsBtn" class="nav-btn admin-only" data-page="reports">Reports</button>
+                <button id="settingsBtn" class="nav-btn admin-only" onclick="showSettingsModal()">Settings</button>
+                
+                <button id="logoutBtn" class="nav-btn logout" onclick="logout()">Logout</button>
             </nav>
         </header>
 
-        <!-- Admin Dashboard Page (Default for Admin) -->
+        <!-- Admin Dashboard Page -->
         <div id="adminDashboard" class="content-page admin-only">
             <div class="admin-dashboard-container">
                 <!-- Dashboard Section -->
                 <div class="dashboard-section">
-                    <h2>Admin Dashboard Overview</h2>
+                    <h2>Dashboard Overview</h2>
                     <div class="dashboard-filters">
                         <select id="dashboardFilter" onchange="filterDashboard()">
                             <option value="department">Department Wise</option>
                             <option value="category">Category Wise</option>
                             <option value="teammember">Team Member Wise</option>
                         </select>
+                        <button onclick="refreshDashboard()" class="btn btn-primary">Refresh</button>
                     </div>
                     <div class="dashboard-stats">
                         <div class="stat-card">
@@ -99,7 +113,7 @@
                             <span id="totalTickets" class="stat-number">0</span>
                         </div>
                         <div class="stat-card">
-                            <h3>Open Tickets</h3>
+                            <h3>Open</h3>
                             <span id="openTickets" class="stat-number">0</span>
                         </div>
                         <div class="stat-card">
@@ -107,7 +121,11 @@
                             <span id="inProgressTickets" class="stat-number">0</span>
                         </div>
                         <div class="stat-card">
-                            <h3>Closed Tickets</h3>
+                            <h3>Resolved</h3>
+                            <span id="resolvedTickets" class="stat-number">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Closed</h3>
                             <span id="closedTickets" class="stat-number">0</span>
                         </div>
                     </div>
@@ -116,71 +134,65 @@
                     </div>
                 </div>
 
-                <!-- Kanban Board Section -->
+                <!-- Admin Kanban Board -->
                 <div class="kanban-section">
-                    <h2>Kanban Board - Admin View</h2>
-                    <div class="sync-status">
-                        <span id="syncIndicator" class="sync-indicator">🔄 Auto-sync enabled</span>
-                        <span id="lastSync" class="last-sync">Last updated: Never</span>
+                    <h2>Admin Kanban Board</h2>
+                    <div class="kanban-controls">
+                        <button onclick="refreshKanban()" class="btn btn-primary">Refresh Board</button>
                     </div>
                     <div class="kanban-board">
                         <div class="kanban-column" data-status="Open">
-                            <h3>Open <span id="openCount" class="count-badge">0</span></h3>
-                            <div id="openColumn" class="kanban-tickets"></div>
+                            <h3>Open <span id="adminOpenCount" class="count-badge">0</span></h3>
+                            <div id="adminOpenColumn" class="kanban-tickets"></div>
                         </div>
                         <div class="kanban-column" data-status="In Progress">
-                            <h3>In Progress <span id="progressCount" class="count-badge">0</span></h3>
-                            <div id="inProgressColumn" class="kanban-tickets"></div>
+                            <h3>In Progress <span id="adminProgressCount" class="count-badge">0</span></h3>
+                            <div id="adminInProgressColumn" class="kanban-tickets"></div>
                         </div>
                         <div class="kanban-column" data-status="Resolved">
-                            <h3>Resolved <span id="resolvedCount" class="count-badge">0</span></h3>
-                            <div id="resolvedColumn" class="kanban-tickets"></div>
+                            <h3>Resolved <span id="adminResolvedCount" class="count-badge">0</span></h3>
+                            <div id="adminResolvedColumn" class="kanban-tickets"></div>
                         </div>
                         <div class="kanban-column" data-status="Closed">
-                            <h3>Closed <span id="closedCount" class="count-badge">0</span></h3>
-                            <div id="closedColumn" class="kanban-tickets"></div>
+                            <h3>Closed <span id="adminClosedCount" class="count-badge">0</span></h3>
+                            <div id="adminClosedColumn" class="kanban-tickets"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- IT Team Kanban Page (Default for IT Team) -->
-        <div id="kanban" class="content-page team-only admin-only">
-            <div class="team-kanban-container">
-                <h2>IT Team Kanban Board</h2>
-                <div class="sync-status">
-                    <span id="teamSyncIndicator" class="sync-indicator">🔄 Real-time sync active</span>
-                    <span id="teamLastSync" class="last-sync">Last updated: Never</span>
+        <!-- IT Team Kanban Page -->
+        <div id="kanban" class="content-page team-only">
+            <h2>IT Team - Ticket Board</h2>
+            <div class="kanban-info">
+                <p><strong>Instructions:</strong> You can drag your assigned tickets from "In Progress" to "Resolved" when you complete the work.</p>
+            </div>
+            <div class="kanban-controls">
+                <button onclick="refreshKanban()" class="btn btn-primary">Refresh Board</button>
+                <button onclick="toggleMyTickets()" class="btn btn-secondary" id="filterMyTicketsBtn">Show My Tickets Only</button>
+            </div>
+            <div class="kanban-board">
+                <div class="kanban-column" data-status="Open">
+                    <h3>Open <span id="teamOpenCount" class="count-badge">0</span></h3>
+                    <div id="teamOpenColumn" class="kanban-tickets"></div>
                 </div>
-                <div class="team-stats">
-                    <div class="stat-card team-stat">
-                        <h4>My Assigned Tickets</h4>
-                        <span id="myAssignedTickets" class="stat-number">0</span>
-                    </div>
-                    <div class="stat-card team-stat">
-                        <h4>My Resolved Today</h4>
-                        <span id="myResolvedToday" class="stat-number">0</span>
-                    </div>
+                <div class="kanban-column" data-status="In Progress">
+                    <h3>In Progress <span id="teamProgressCount" class="count-badge">0</span></h3>
+                    <div id="teamInProgressColumn" class="kanban-tickets"></div>
                 </div>
-                <div class="kanban-board team-kanban">
-                    <div class="kanban-column" data-status="Open">
-                        <h3>New Assignments <span id="teamOpenCount" class="count-badge">0</span></h3>
-                        <div id="teamOpenColumn" class="kanban-tickets"></div>
-                    </div>
-                    <div class="kanban-column" data-status="In Progress">
-                        <h3>Working On <span id="teamProgressCount" class="count-badge">0</span></h3>
-                        <div id="teamInProgressColumn" class="kanban-tickets"></div>
-                    </div>
-                    <div class="kanban-column" data-status="Resolved">
-                        <h3>Completed <span id="teamResolvedCount" class="count-badge">0</span></h3>
-                        <div id="teamResolvedColumn" class="kanban-tickets"></div>
-                    </div>
+                <div class="kanban-column" data-status="Resolved">
+                    <h3>Resolved <span id="teamResolvedCount" class="count-badge">0</span></h3>
+                    <div id="teamResolvedColumn" class="kanban-tickets"></div>
+                </div>
+                <div class="kanban-column" data-status="Closed">
+                    <h3>Closed <span id="teamClosedCount" class="count-badge">0</span></h3>
+                    <div id="teamClosedColumn" class="kanban-tickets"></div>
                 </div>
             </div>
         </div>
 
-        <!-- User Ticket Form (Default for Users) -->
+        <!-- User Ticket Form -->
         <div id="ticketForm" class="content-page user-only">
             <h2>Submit New Support Ticket</h2>
             <form id="newTicketForm" class="ticket-form">
@@ -257,7 +269,7 @@
 
         <!-- My Tickets Page -->
         <div id="myTickets" class="content-page">
-            <h2>My Tickets</h2>
+            <h2 id="ticketsPageTitle">My Tickets</h2>
             <div class="tickets-filter">
                 <select id="ticketStatusFilter" onchange="filterMyTickets()">
                     <option value="">All Tickets</option>
@@ -266,9 +278,7 @@
                     <option value="Resolved">Resolved</option>
                     <option value="Closed">Closed</option>
                 </select>
-                <div class="sync-status">
-                    <span id="ticketsSyncIndicator" class="sync-indicator">🔄 Auto-refresh enabled</span>
-                </div>
+                <button onclick="refreshTicketsList()" class="btn btn-primary">Refresh</button>
             </div>
             <div id="ticketsList" class="tickets-list"></div>
         </div>
@@ -277,13 +287,10 @@
         <div id="userManagement" class="content-page admin-only">
             <h2>User Management</h2>
             <button onclick="showAddUserModal()" class="add-btn">Add New User</button>
-            <div class="user-filters">
-                <select id="roleFilter" onchange="filterUsers()">
-                    <option value="">All Roles</option>
-                    <option value="admin">Admin</option>
-                    <option value="team">IT Team Member</option>
-                    <option value="user">User</option>
-                </select>
+            <div class="user-stats">
+                <div class="stat-item">Admin Users: <span id="adminCount">0</span></div>
+                <div class="stat-item">IT Team Members: <span id="teamCount">0</span></div>
+                <div class="stat-item">Regular Users: <span id="regularUserCount">0</span></div>
             </div>
             <div id="usersList" class="users-list"></div>
         </div>
@@ -296,14 +303,21 @@
                 <input type="date" id="endDate">
                 <select id="reportType">
                     <option value="all">All Tickets</option>
-                    <option value="performance">Team Performance</option>
-                    <option value="department">Department Analysis</option>
+                    <option value="department">By Department</option>
+                    <option value="team">By Team Member</option>
+                    <option value="status">By Status</option>
                 </select>
                 <button onclick="generateReport()">Generate Report</button>
                 <button onclick="exportReport()">Export to CSV</button>
             </div>
             <div id="reportTable" class="report-table"></div>
         </div>
+    </div>
+
+    <!-- Real-time Status Indicator -->
+    <div id="statusIndicator" class="status-indicator">
+        <span class="status-dot online"></span>
+        <span>Connected</span>
     </div>
 
     <!-- Modals -->
@@ -332,9 +346,9 @@
                     <option value="Admin">Admin</option>
                 </select>
                 <select id="newUserRole" required>
-                    <option value="user">User</option>
+                    <option value="user">Regular User</option>
                     <option value="team">IT Team Member</option>
-                    <option value="admin">Admin</option>
+                    <option value="admin">Administrator</option>
                 </select>
                 <button type="submit">Add User</button>
             </form>
@@ -350,6 +364,12 @@
                     <option value="">Select IT Team Member</option>
                 </select>
                 <textarea id="assignNotes" placeholder="Assignment notes (optional)" rows="3"></textarea>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="sendEmailNotification" checked>
+                        Send email notification to team member
+                    </label>
+                </div>
                 <button type="submit">Assign Ticket</button>
             </form>
         </div>
@@ -368,37 +388,19 @@
                 </div>
                 <div class="form-group">
                     <label for="companyNameEdit">Company Name:</label>
-                    <input type="text" id="companyNameEdit" value="TechSupport Pro">
+                    <input type="text" id="companyNameEdit" value="Your Company Name">
                     <button onclick="updateCompanyName()">Update</button>
                 </div>
-                <div class="form-group">
-                    <label for="syncInterval">Auto-sync Interval (seconds):</label>
-                    <select id="syncInterval" onchange="updateSyncInterval()">
-                        <option value="5">5 seconds</option>
-                        <option value="10" selected>10 seconds</option>
-                        <option value="30">30 seconds</option>
-                        <option value="60">1 minute</option>
-                    </select>
-                </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Email Notification Preview Modal -->
-    <div id="emailPreviewModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('emailPreviewModal')">&times;</span>
-            <h3>📧 Email Notification Sent</h3>
-            <div id="emailPreviewContent" class="email-preview"></div>
         </div>
     </div>
 
     <!-- Scripts -->
     <script src="data/storage.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/realtime.js"></script>
     <script src="js/app.js"></script>
     <script src="js/dashboard.js"></script>
     <script src="js/kanban.js"></script>
-    <script src="js/realtime.js"></script>
 </body>
 </html>
