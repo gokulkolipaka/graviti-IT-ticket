@@ -30,6 +30,74 @@ body {
     display: block;
 }
 
+/* Role-based visibility */
+.admin-only, .user-only, .team-only {
+    display: none;
+}
+
+.admin-view .admin-only {
+    display: block;
+}
+
+.user-view .user-only {
+    display: block;
+}
+
+.team-view .team-only {
+    display: block;
+}
+
+/* Navigation visibility */
+.admin-nav, .user-nav, .team-nav {
+    display: none;
+}
+
+.admin-view .admin-nav {
+    display: inline-block;
+}
+
+.user-view .user-nav {
+    display: inline-block;
+}
+
+.team-view .team-nav {
+    display: inline-block;
+}
+
+/* Status Indicator */
+.status-indicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: white;
+    padding: 8px 12px;
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #27ae60;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.disconnected {
+    background: #e74c3c;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
 /* Login Page */
 .login-container {
     display: flex;
@@ -145,6 +213,36 @@ body {
     gap: 15px;
 }
 
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #666;
+    font-size: 14px;
+}
+
+.user-role-badge {
+    background: #667eea;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.user-role-badge.admin {
+    background: #e74c3c;
+}
+
+.user-role-badge.team {
+    background: #f39c12;
+}
+
+.user-role-badge.user {
+    background: #27ae60;
+}
+
 .nav-menu {
     display: flex;
     gap: 10px;
@@ -250,7 +348,36 @@ body {
     position: relative;
 }
 
+/* User Management Stats */
+.user-stats {
+    display: flex;
+    gap: 20px;
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.stat-item {
+    font-weight: bold;
+    color: #333;
+}
+
 /* Kanban Board */
+.kanban-info {
+    background: #e8f4f8;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #17a2b8;
+}
+
+.kanban-controls {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+}
+
 .kanban-board {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -288,13 +415,21 @@ body {
     min-height: 400px;
 }
 
+.team-readonly {
+    opacity: 0.7;
+}
+
+.team-draggable .kanban-ticket {
+    cursor: move;
+    border-left: 4px solid #f39c12;
+}
+
 .kanban-ticket {
     background: white;
     padding: 15px;
     border-radius: 8px;
     margin-bottom: 10px;
     box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    cursor: move;
     border-left: 4px solid #667eea;
     transition: all 0.3s;
 }
@@ -302,6 +437,11 @@ body {
 .kanban-ticket:hover {
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     transform: translateY(-2px);
+}
+
+.kanban-ticket.assigned-to-me {
+    border-left-color: #27ae60;
+    background: #f8fff8;
 }
 
 .kanban-ticket.sortable-chosen {
@@ -385,6 +525,9 @@ body {
 /* Tickets List */
 .tickets-filter {
     margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
 }
 
 .tickets-filter select {
@@ -535,6 +678,22 @@ body {
     border-radius: 10px;
     box-shadow: 0 3px 10px rgba(0,0,0,0.1);
     border-left: 4px solid #667eea;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 15px;
+    align-items: center;
+}
+
+.user-card.admin-user {
+    border-left-color: #e74c3c;
+}
+
+.user-card.team-user {
+    border-left-color: #f39c12;
+}
+
+.user-card.regular-user {
+    border-left-color: #27ae60;
 }
 
 .user-card h4 {
@@ -545,6 +704,11 @@ body {
 .user-card p {
     margin: 5px 0;
     color: #666;
+}
+
+.user-actions {
+    display: flex;
+    gap: 5px;
 }
 
 /* Report Table */
@@ -593,6 +757,7 @@ body {
 }
 
 .report-filters input,
+.report-filters select,
 .report-filters button {
     padding: 8px 12px;
     border: 2px solid #ddd;
@@ -612,7 +777,13 @@ body {
 
 /* Settings */
 .settings-section {
-    margin-bottom: 20px;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.settings-section:last-child {
+    border-bottom: none;
 }
 
 .settings-section h4 {
@@ -641,24 +812,18 @@ body {
     border-radius: 5px;
 }
 
-.admin-only {
-    display: none;
-}
-
-.user-only {
-    display: none;
-}
-
-.admin-view .admin-only {
-    display: block;
-}
-
-.user-view .user-only {
-    display: block;
-}
-
 .hidden {
     display: none !important;
+}
+
+.no-tickets {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 40px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
 }
 
 /* Buttons */
@@ -679,6 +844,15 @@ body {
 
 .btn-primary:hover {
     background: #5a6fd8;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
 }
 
 .btn-success {
@@ -788,6 +962,16 @@ body {
     background: #27ae60; 
 }
 
+/* Email notification indicator */
+.email-sent-indicator {
+    background: #27ae60;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    margin-left: 5px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .nav-menu {
@@ -827,11 +1011,17 @@ body {
     
     .header {
         padding: 10px;
+        flex-direction: column;
+        gap: 10px;
     }
     
     .modal-content {
         margin: 10% auto;
         padding: 20px;
+    }
+
+    .user-info {
+        order: -1;
     }
 }
 
@@ -852,4 +1042,30 @@ body {
     .nav-menu {
         justify-content: center;
     }
+
+    .tickets-filter {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* Animation for real-time updates */
+@keyframes newTicketFlash {
+    0% { background: #fff3cd; }
+    50% { background: #ffeaa7; }
+    100% { background: white; }
+}
+
+.new-ticket-flash {
+    animation: newTicketFlash 2s ease-in-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
 }
