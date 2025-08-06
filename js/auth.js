@@ -1,4 +1,4 @@
-// Three-Tier Authentication and User Management
+// Authentication and User Management System
 class AuthSystem {
     constructor() {
         this.currentUser = null;
@@ -11,46 +11,26 @@ class AuthSystem {
                 {
                     username: 'admin',
                     password: 'admin123',
-                    email: 'admin@techsupport.com',
+                    email: 'admin@company.com',
                     role: 'admin',
                     department: 'IT',
-                    isFirstLogin: true
+                    isFirstLogin: false // Changed to false to avoid auto-password change
                 },
                 {
                     username: 'itteam1',
                     password: 'team123',
-                    email: 'john.doe@techsupport.com',
+                    email: 'itteam1@company.com',
                     role: 'team',
                     department: 'IT',
-                    isFirstLogin: false,
-                    fullName: 'John Doe'
-                },
-                {
-                    username: 'itteam2',
-                    password: 'team123',
-                    email: 'jane.smith@techsupport.com',
-                    role: 'team',
-                    department: 'IT',
-                    isFirstLogin: false,
-                    fullName: 'Jane Smith'
+                    isFirstLogin: false
                 },
                 {
                     username: 'user1',
                     password: 'user123',
-                    email: 'alice.johnson@company.com',
+                    email: 'user1@company.com',
                     role: 'user',
                     department: 'HR',
-                    isFirstLogin: false,
-                    fullName: 'Alice Johnson'
-                },
-                {
-                    username: 'user2',
-                    password: 'user123',
-                    email: 'bob.wilson@company.com',
-                    role: 'user',
-                    department: 'Finance',
-                    isFirstLogin: false,
-                    fullName: 'Bob Wilson'
+                    isFirstLogin: false
                 }
             ];
             localStorage.setItem('users', JSON.stringify(defaultUsers));
@@ -65,9 +45,10 @@ class AuthSystem {
             this.currentUser = user;
             localStorage.setItem('currentUser', JSON.stringify(user));
             
-            if (user.isFirstLogin && (user.role === 'admin' || user.role === 'team')) {
+            // Only show password change for first login
+            if (user.isFirstLogin) {
                 this.showPasswordChangeModal();
-                return false;
+                return 'password_change_required';
             }
             
             return true;
@@ -145,22 +126,6 @@ class AuthSystem {
         return this.currentUser ? this.currentUser.role : null;
     }
 
-    canAssignTickets() {
-        return this.isAdmin();
-    }
-
-    canResolveTickets() {
-        return this.isAdmin() || this.isTeamMember();
-    }
-
-    canCloseTickets() {
-        return this.isAdmin();
-    }
-
-    canManageUsers() {
-        return this.isAdmin();
-    }
-
     logout() {
         this.currentUser = null;
         localStorage.removeItem('currentUser');
@@ -173,17 +138,12 @@ class AuthSystem {
             throw new Error('Username already exists');
         }
 
-        if (users.find(u => u.email === userData.email)) {
-            throw new Error('Email already exists');
-        }
-
         const newUser = {
             username: userData.username,
             password: userData.password || 'temp123',
             email: userData.email,
             role: userData.role,
             department: userData.department,
-            fullName: userData.fullName || userData.username,
             isFirstLogin: true
         };
 
@@ -222,6 +182,15 @@ class AuthSystem {
         }
         
         return false;
+    }
+
+    getUserCounts() {
+        const users = this.getUsers();
+        return {
+            admin: users.filter(u => u.role === 'admin').length,
+            team: users.filter(u => u.role === 'team').length,
+            user: users.filter(u => u.role === 'user').length
+        };
     }
 }
 
