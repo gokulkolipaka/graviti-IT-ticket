@@ -1,4 +1,4 @@
-// Dashboard functionality
+// Dashboard functionality with three-tier support
 class Dashboard {
     constructor(ticketSystem) {
         this.ticketSystem = ticketSystem;
@@ -16,6 +16,7 @@ class Dashboard {
         document.getElementById('totalTickets').textContent = tickets.length;
         document.getElementById('openTickets').textContent = tickets.filter(t => t.status === 'Open').length;
         document.getElementById('inProgressTickets').textContent = tickets.filter(t => t.status === 'In Progress').length;
+        document.getElementById('resolvedTickets').textContent = tickets.filter(t => t.status === 'Resolved').length;
         document.getElementById('closedTickets').textContent = tickets.filter(t => t.status === 'Closed').length;
     }
 
@@ -56,7 +57,8 @@ class Dashboard {
                     data: Object.values(chartData),
                     backgroundColor: [
                         '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
-                        '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+                        '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF',
+                        '#FF5733', '#33FF57', '#3357FF', '#FF33F5'
                     ]
                 }]
             },
@@ -97,10 +99,19 @@ class Dashboard {
 
     getTicketsByTeamMember(tickets) {
         const memberCounts = { 'Unassigned': 0 };
+        const teamMembers = auth.getTeamMembers();
+        
+        // Initialize all team members with 0
+        teamMembers.forEach(member => {
+            memberCounts[member.username] = 0;
+        });
+        
+        // Count tickets assigned to each member
         tickets.forEach(ticket => {
             const member = ticket.assignedTo || 'Unassigned';
             memberCounts[member] = (memberCounts[member] || 0) + 1;
         });
+        
         return memberCounts;
     }
 
@@ -124,18 +135,20 @@ TicketingSystem.prototype.loadReports = function() {
 TicketingSystem.prototype.generateReport = function() {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
+    const reportType = document.getElementById('reportType').value;
     
     if (!startDate || !endDate) {
-        this.showNotification('Please select both start and end dates', 'error');
+        realtimeSystem.showNotification('Please select both start and end dates', 'error');
         return;
     }
     
-    this.generateReportTable(startDate, endDate);
+    this.generateReportTable(startDate, endDate, reportType);
 };
 
 TicketingSystem.prototype.exportReport = function() {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
+    const reportType = document.getElementById('reportType').value;
     
     let filteredTickets = this.tickets;
     
@@ -151,14 +164,15 @@ TicketingSystem.prototype.exportReport = function() {
     }
     
     if (filteredTickets.length === 0) {
-        this.showNotification('No tickets to export', 'error');
+        realtimeSystem.showNotification('No tickets to export', 'error');
         return;
     }
     
     // Create CSV content
     const headers = [
         'Ticket ID', 'Summary', 'Status', 'Last Update', 'Opening Date', 
-        'Severity', 'Requestor', 'Assigned To', 'Type/Category', 'Department', 'Time to Resolve'
+        'Severity', 'Requestor', 'Requestor Dept', 'Assigned To', 'Type/Category', 
+        'Department', 'Assigned At', 'Resolved At', 'Closed At', 'Time to Resolve'
     ];
     
     let csvContent = headers.join(',') + '\n';
@@ -180,9 +194,13 @@ TicketingSystem.prototype.exportReport = function() {
             timeCreated.toLocaleString(),
             ticket.severity,
             ticket.requestor,
+            ticket.requestorDepartment || 'Unknown',
             ticket.assignedTo || 'Unassigned',
             ticket.type,
             ticket.department || 'Unknown',
+            ticket.assignedAt ? new Date(ticket.assignedAt).toLocaleString() : 'N/A',
+            ticket.resolvedAt ? new Date(ticket.resolvedAt).toLocaleString() : 'N/A',
+            ticket.closedAt ? new Date(ticket.closedAt).toLocaleString() : 'N/A',
             timeStatus
         ];
         
@@ -194,16 +212,16 @@ TicketingSystem.prototype.exportReport = function() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `ticket_report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `ticket_report_${reportType}_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    this.showNotification('Report exported successfully', 'success');
+    realtimeSystem.showNotification('Report exported successfully', 'success');
 };
 
-TicketingSystem.prototype.generateReportTable = function(startDate, endDate) {
+TicketingSystem.prototype.generateReportTable = function(startDate, endDate, reportType = 'all') {
     let filteredTickets = this.tickets;
     
     if (startDate && endDate) {
@@ -220,7 +238,7 @@ TicketingSystem.prototype.generateReportTable = function(startDate, endDate) {
     const reportTable = document.getElementById('reportTable');
     
     if (filteredTickets.length === 0) {
-        reportTable.innerHTML = '<div class="no-data" style="text-align: center; padding: 40px; color: #666;">No tickets found for the selected date range.</div>';
+        reportTable.innerHTML = '<div class="no-data" style="text-align: center; padding: 40px; color: #666;">No tickets found for the selected criteria.</div>';
         return;
     }
     
@@ -231,13 +249,11 @@ TicketingSystem.prototype.generateReportTable = function(startDate, endDate) {
                     <th>Ticket ID</th>
                     <th>Summary</th>
                     <th>Status</th>
-                    <th>Last Update</th>
-                    <th>Opening Date</th>
                     <th>Severity</th>
+                    <th>Department</th>
                     <th>Requestor</th>
                     <th>Assigned To</th>
-                    <th>Type/Category</th>
-                    <th>Department</th>
+                    <th>Created</th>
                     <th>Time to Resolve</th>
                 </tr>
             </thead>
@@ -246,25 +262,22 @@ TicketingSystem.prototype.generateReportTable = function(startDate, endDate) {
     
     filteredTickets.forEach(ticket => {
         const timeCreated = new Date(ticket.createdAt);
-        const timeUpdated = new Date(ticket.updatedAt);
         const hoursElapsed = (new Date() - timeCreated) / (1000 * 60 * 60);
         const expectedHours = this.timeToResolve[ticket.severity];
         const timeStatus = ticket.status === 'Closed' ? 
-            `${hoursElapsed.toFixed(1)}h (Completed)` : 
+            `${hoursElapsed.toFixed(1)}h` : 
             `${hoursElapsed.toFixed(1)}h / ${expectedHours}h`;
         
         tableHTML += `
             <tr>
                 <td>${ticket.id}</td>
-                <td>${ticket.description.substring(0, 50)}${ticket.description.length > 50 ? '...' : ''}</td>
+                <td>${ticket.description.substring(0, 40)}${ticket.description.length > 40 ? '...' : ''}</td>
                 <td><span class="ticket-status status-${ticket.status.toLowerCase().replace(' ', '-')}">${ticket.status}</span></td>
-                <td>${timeUpdated.toLocaleString()}</td>
-                <td>${timeCreated.toLocaleString()}</td>
                 <td><span class="severity-badge severity-${ticket.severity.toLowerCase()}">${ticket.severity}</span></td>
+                <td>${ticket.department}</td>
                 <td>${ticket.requestor}</td>
                 <td>${ticket.assignedTo || 'Unassigned'}</td>
-                <td>${ticket.type}</td>
-                <td>${ticket.department || 'Unknown'}</td>
+                <td>${timeCreated.toLocaleDateString()}</td>
                 <td>${timeStatus}</td>
             </tr>
         `;
