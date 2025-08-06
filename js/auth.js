@@ -11,7 +11,7 @@ class AuthSystem {
                 {
                     username: 'admin',
                     password: 'admin123',
-                    email: 'admin@graviti.com',
+                    email: '',
                     role: 'admin',
                     department: 'IT',
                     isFirstLogin: true
@@ -19,7 +19,7 @@ class AuthSystem {
                 {
                     username: 'itteam1',
                     password: 'team123',
-                    email: 'itteam1@graviti.com',
+                    email: '',
                     role: 'team',
                     department: 'IT',
                     isFirstLogin: false
@@ -27,7 +27,7 @@ class AuthSystem {
                 {
                     username: 'user1',
                     password: 'user123',
-                    email: 'user1@graviti.com',
+                    email: '',
                     role: 'user',
                     department: 'HR',
                     isFirstLogin: false
