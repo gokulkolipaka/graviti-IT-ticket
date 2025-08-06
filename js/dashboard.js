@@ -20,15 +20,29 @@ class Dashboard {
     }
 
     renderChart() {
-        const ctx = document.getElementById('dashboardChart').getContext('2d');
+        const ctx = document.getElementById('dashboardChart');
+        if (!ctx) return;
+
         const tickets = this.ticketSystem.tickets;
+        const filter = document.getElementById('dashboardFilter').value;
         
-        const statusCounts = {
-            'Open': tickets.filter(t => t.status === 'Open').length,
-            'In Progress': tickets.filter(t => t.status === 'In Progress').length,
-            'Resolved': tickets.filter(t => t.status === 'Resolved').length,
-            'Closed': tickets.filter(t => t.status === 'Closed').length
-        };
+        let chartData = {};
+        let chartTitle = '';
+
+        switch(filter) {
+            case 'department':
+                chartTitle = 'Tickets by Department';
+                chartData = this.getTicketsByDepartment(tickets);
+                break;
+            case 'category':
+                chartTitle = 'Tickets by Category';
+                chartData = this.getTicketsByCategory(tickets);
+                break;
+            case 'teammember':
+                chartTitle = 'Tickets by Team Member';
+                chartData = this.getTicketsByTeamMember(tickets);
+                break;
+        }
 
         if (this.chart) {
             this.chart.destroy();
@@ -37,10 +51,13 @@ class Dashboard {
         this.chart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: Object.keys(statusCounts),
+                labels: Object.keys(chartData),
                 datasets: [{
-                    data: Object.values(statusCounts),
-                    backgroundColor: ['#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1']
+                    data: Object.values(chartData),
+                    backgroundColor: [
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                        '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+                    ]
                 }]
             },
             options: {
@@ -49,16 +66,45 @@ class Dashboard {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Ticket Status Distribution'
+                        text: chartTitle,
+                        font: { size: 16 }
+                    },
+                    legend: {
+                        position: 'right'
                     }
                 }
             }
         });
     }
 
+    getTicketsByDepartment(tickets) {
+        const departmentCounts = {};
+        tickets.forEach(ticket => {
+            const dept = ticket.department || 'Unknown';
+            departmentCounts[dept] = (departmentCounts[dept] || 0) + 1;
+        });
+        return departmentCounts;
+    }
+
+    getTicketsByCategory(tickets) {
+        const categoryCounts = {};
+        tickets.forEach(ticket => {
+            const category = ticket.type;
+            categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+        });
+        return categoryCounts;
+    }
+
+    getTicketsByTeamMember(tickets) {
+        const memberCounts = { 'Unassigned': 0 };
+        tickets.forEach(ticket => {
+            const member = ticket.assignedTo || 'Unassigned';
+            memberCounts[member] = (memberCounts[member] || 0) + 1;
+        });
+        return memberCounts;
+    }
+
     filterDashboard() {
-        const filter = document.getElementById('dashboardFilter').value;
-        // Implement filtering logic based on department, category, or team member
         this.renderChart();
     }
 }
@@ -80,11 +126,81 @@ TicketingSystem.prototype.generateReport = function() {
     const endDate = document.getElementById('endDate').value;
     
     if (!startDate || !endDate) {
-        alert('Please select both start and end dates');
+        this.showNotification('Please select both start and end dates', 'error');
         return;
     }
     
     this.generateReportTable(startDate, endDate);
+};
+
+TicketingSystem.prototype.exportReport = function() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    let filteredTickets = this.tickets;
+    
+    if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        
+        filteredTickets = this.tickets.filter(ticket => {
+            const ticketDate = new Date(ticket.createdAt);
+            return ticketDate >= start && ticketDate <= end;
+        });
+    }
+    
+    if (filteredTickets.length === 0) {
+        this.showNotification('No tickets to export', 'error');
+        return;
+    }
+    
+    // Create CSV content
+    const headers = [
+        'Ticket ID', 'Summary', 'Status', 'Last Update', 'Opening Date', 
+        'Severity', 'Requestor', 'Assigned To', 'Type/Category', 'Department', 'Time to Resolve'
+    ];
+    
+    let csvContent = headers.join(',') + '\n';
+    
+    filteredTickets.forEach(ticket => {
+        const timeCreated = new Date(ticket.createdAt);
+        const timeUpdated = new Date(ticket.updatedAt);
+        const hoursElapsed = (new Date() - timeCreated) / (1000 * 60 * 60);
+        const expectedHours = this.timeToResolve[ticket.severity];
+        const timeStatus = ticket.status === 'Closed' ? 
+            `${hoursElapsed.toFixed(1)}h (Completed)` : 
+            `${hoursElapsed.toFixed(1)}h / ${expectedHours}h`;
+        
+        const row = [
+            ticket.id,
+            `"${ticket.description.replace(/"/g, '""').substring(0, 50)}${ticket.description.length > 50 ? '...' : ''}"`,
+            ticket.status,
+            timeUpdated.toLocaleString(),
+            timeCreated.toLocaleString(),
+            ticket.severity,
+            ticket.requestor,
+            ticket.assignedTo || 'Unassigned',
+            ticket.type,
+            ticket.department || 'Unknown',
+            timeStatus
+        ];
+        
+        csvContent += row.join(',') + '\n';
+    });
+    
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `ticket_report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    this.showNotification('Report exported successfully', 'success');
 };
 
 TicketingSystem.prototype.generateReportTable = function(startDate, endDate) {
@@ -93,7 +209,7 @@ TicketingSystem.prototype.generateReportTable = function(startDate, endDate) {
     if (startDate && endDate) {
         const start = new Date(startDate);
         const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999); // Include full end date
+        end.setHours(23, 59, 59, 999);
         
         filteredTickets = this.tickets.filter(ticket => {
             const ticketDate = new Date(ticket.createdAt);
@@ -104,7 +220,7 @@ TicketingSystem.prototype.generateReportTable = function(startDate, endDate) {
     const reportTable = document.getElementById('reportTable');
     
     if (filteredTickets.length === 0) {
-        reportTable.innerHTML = '<p>No tickets found for the selected date range.</p>';
+        reportTable.innerHTML = '<div class="no-data" style="text-align: center; padding: 40px; color: #666;">No tickets found for the selected date range.</div>';
         return;
     }
     
@@ -121,6 +237,7 @@ TicketingSystem.prototype.generateReportTable = function(startDate, endDate) {
                     <th>Requestor</th>
                     <th>Assigned To</th>
                     <th>Type/Category</th>
+                    <th>Department</th>
                     <th>Time to Resolve</th>
                 </tr>
             </thead>
@@ -140,13 +257,14 @@ TicketingSystem.prototype.generateReportTable = function(startDate, endDate) {
             <tr>
                 <td>${ticket.id}</td>
                 <td>${ticket.description.substring(0, 50)}${ticket.description.length > 50 ? '...' : ''}</td>
-                <td>${ticket.status}</td>
+                <td><span class="ticket-status status-${ticket.status.toLowerCase().replace(' ', '-')}">${ticket.status}</span></td>
                 <td>${timeUpdated.toLocaleString()}</td>
                 <td>${timeCreated.toLocaleString()}</td>
-                <td>${ticket.severity}</td>
+                <td><span class="severity-badge severity-${ticket.severity.toLowerCase()}">${ticket.severity}</span></td>
                 <td>${ticket.requestor}</td>
                 <td>${ticket.assignedTo || 'Unassigned'}</td>
                 <td>${ticket.type}</td>
+                <td>${ticket.department || 'Unknown'}</td>
                 <td>${timeStatus}</td>
             </tr>
         `;
