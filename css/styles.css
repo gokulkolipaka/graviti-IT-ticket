@@ -30,74 +30,6 @@ body {
     display: block;
 }
 
-/* Role-based visibility */
-.admin-only, .user-only, .team-only {
-    display: none;
-}
-
-.admin-view .admin-only {
-    display: block;
-}
-
-.user-view .user-only {
-    display: block;
-}
-
-.team-view .team-only {
-    display: block;
-}
-
-/* Navigation visibility */
-.admin-nav, .user-nav, .team-nav {
-    display: none;
-}
-
-.admin-view .admin-nav {
-    display: inline-block;
-}
-
-.user-view .user-nav {
-    display: inline-block;
-}
-
-.team-view .team-nav {
-    display: inline-block;
-}
-
-/* Status Indicator */
-.status-indicator {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background: white;
-    padding: 8px 12px;
-    border-radius: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    z-index: 1000;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #27ae60;
-    animation: pulse 2s infinite;
-}
-
-.status-dot.disconnected {
-    background: #e74c3c;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-
 /* Login Page */
 .login-container {
     display: flex;
@@ -216,30 +148,34 @@ body {
 .user-info {
     display: flex;
     align-items: center;
-    gap: 10px;
-    color: #666;
-    font-size: 14px;
+    gap: 15px;
 }
 
-.user-role-badge {
+.welcome-text {
+    font-size: 16px;
+    color: #333;
+    font-weight: 500;
+}
+
+.role-badge {
     background: #667eea;
     color: white;
     padding: 4px 12px;
-    border-radius: 12px;
+    border-radius: 15px;
     font-size: 12px;
     font-weight: bold;
     text-transform: uppercase;
 }
 
-.user-role-badge.admin {
+.role-badge.admin {
     background: #e74c3c;
 }
 
-.user-role-badge.team {
+.role-badge.team {
     background: #f39c12;
 }
 
-.user-role-badge.user {
+.role-badge.user {
     background: #27ae60;
 }
 
@@ -276,6 +212,35 @@ body {
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
+/* Role-based visibility */
+.admin-only {
+    display: none;
+}
+
+.team-only {
+    display: none;
+}
+
+.user-only {
+    display: none;
+}
+
+.admin-view .admin-only {
+    display: block;
+}
+
+.team-view .team-only {
+    display: block;
+}
+
+.admin-view .team-only {
+    display: block; /* Admin can see team features too */
+}
+
+.user-view .user-only {
+    display: block;
+}
+
 /* Admin Dashboard */
 .admin-dashboard-container {
     display: grid;
@@ -307,6 +272,35 @@ body {
     font-size: 14px;
 }
 
+/* Sync Status */
+.sync-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    font-size: 12px;
+}
+
+.sync-indicator {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+.sync-indicator.syncing {
+    color: #f39c12;
+}
+
+.sync-indicator.error {
+    color: #e74c3c;
+}
+
+.last-sync {
+    color: #666;
+}
+
 /* Dashboard Stats */
 .dashboard-stats {
     display: grid;
@@ -335,11 +329,21 @@ body {
     opacity: 0.9;
 }
 
+.stat-card h4 {
+    font-size: 14px;
+    margin-bottom: 10px;
+    opacity: 0.9;
+}
+
 .stat-number {
     display: block;
     font-size: 36px;
     font-weight: bold;
     margin-top: 10px;
+}
+
+.stat-card.team-stat {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
 }
 
 .chart-container {
@@ -348,36 +352,40 @@ body {
     position: relative;
 }
 
-/* User Management Stats */
-.user-stats {
-    display: flex;
-    gap: 20px;
+/* Team Stats */
+.team-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
     margin: 20px 0;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
 }
 
-.stat-item {
-    font-weight: bold;
+/* IT Team Kanban */
+.team-kanban-container {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.team-kanban-container h2 {
+    margin-bottom: 20px;
     color: #333;
+    border-bottom: 3px solid #f39c12;
+    padding-bottom: 10px;
+}
+
+.team-kanban .kanban-column {
+    background: #fff3cd;
+    border: 2px solid #f39c12;
+}
+
+.team-kanban .kanban-column h3 {
+    color: #f39c12;
+    border-bottom: 2px solid #f39c12;
 }
 
 /* Kanban Board */
-.kanban-info {
-    background: #e8f4f8;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    border-left: 4px solid #17a2b8;
-}
-
-.kanban-controls {
-    margin-bottom: 20px;
-    display: flex;
-    gap: 10px;
-}
-
 .kanban-board {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -386,11 +394,21 @@ body {
     min-height: 500px;
 }
 
+.team-kanban {
+    grid-template-columns: repeat(3, 1fr);
+}
+
 .kanban-column {
     background: #f8f9fa;
     border-radius: 10px;
     padding: 15px;
     position: relative;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s;
+}
+
+.kanban-column:hover {
+    border-color: #667eea;
 }
 
 .kanban-column h3 {
@@ -415,23 +433,16 @@ body {
     min-height: 400px;
 }
 
-.team-readonly {
-    opacity: 0.7;
-}
-
-.team-draggable .kanban-ticket {
-    cursor: move;
-    border-left: 4px solid #f39c12;
-}
-
 .kanban-ticket {
     background: white;
     padding: 15px;
     border-radius: 8px;
     margin-bottom: 10px;
     box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    cursor: move;
     border-left: 4px solid #667eea;
     transition: all 0.3s;
+    position: relative;
 }
 
 .kanban-ticket:hover {
@@ -439,18 +450,24 @@ body {
     transform: translateY(-2px);
 }
 
-.kanban-ticket.assigned-to-me {
-    border-left-color: #27ae60;
-    background: #f8fff8;
-}
-
 .kanban-ticket.sortable-chosen {
     opacity: 0.8;
-    transform: rotate(5deg);
+    transform: rotate(2deg);
+    z-index: 999;
 }
 
 .kanban-ticket.sortable-ghost {
     opacity: 0.4;
+}
+
+.kanban-ticket.assigned-to-me {
+    border-left-color: #f39c12;
+    background: linear-gradient(135deg, #fff, #fff8e1);
+}
+
+.kanban-ticket.high-priority {
+    border-left-color: #e74c3c;
+    background: linear-gradient(135deg, #fff, #ffebee);
 }
 
 .sortable-drag {
@@ -526,11 +543,29 @@ body {
 .tickets-filter {
     margin-bottom: 20px;
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
     align-items: center;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
 }
 
 .tickets-filter select {
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+}
+
+.user-filters {
+    margin-bottom: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+.user-filters select {
     padding: 8px 12px;
     border: 2px solid #ddd;
     border-radius: 5px;
@@ -548,6 +583,7 @@ body {
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     border-left: 5px solid #667eea;
     transition: transform 0.3s;
+    position: relative;
 }
 
 .ticket-card:hover {
@@ -617,6 +653,13 @@ body {
     font-weight: bold;
     display: inline-block;
     margin-top: 10px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
 }
 
 .ticket-actions {
@@ -624,6 +667,74 @@ body {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+}
+
+.new-assignment {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #f39c12;
+    color: white;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-5px); }
+    60% { transform: translateY(-3px); }
+}
+
+/* Email Preview */
+.email-preview {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+}
+
+.email-header {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.email-subject {
+    font-weight: bold;
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.email-meta {
+    font-size: 12px;
+    color: #666;
+}
+
+.email-body {
+    color: #333;
+}
+
+.ticket-details-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+}
+
+.ticket-details-table th,
+.ticket-details-table td {
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    text-align: left;
+}
+
+.ticket-details-table th {
+    background: #e9ecef;
+    font-weight: bold;
 }
 
 /* Modals */
@@ -678,21 +789,18 @@ body {
     border-radius: 10px;
     box-shadow: 0 3px 10px rgba(0,0,0,0.1);
     border-left: 4px solid #667eea;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 15px;
-    align-items: center;
+    position: relative;
 }
 
-.user-card.admin-user {
+.user-card.admin {
     border-left-color: #e74c3c;
 }
 
-.user-card.team-user {
+.user-card.team {
     border-left-color: #f39c12;
 }
 
-.user-card.regular-user {
+.user-card.user {
     border-left-color: #27ae60;
 }
 
@@ -706,9 +814,30 @@ body {
     color: #666;
 }
 
-.user-actions {
-    display: flex;
-    gap: 5px;
+.user-role-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.user-role-badge.admin {
+    background: #e74c3c;
+    color: white;
+}
+
+.user-role-badge.team {
+    background: #f39c12;
+    color: white;
+}
+
+.user-role-badge.user {
+    background: #27ae60;
+    color: white;
 }
 
 /* Report Table */
@@ -777,13 +906,7 @@ body {
 
 /* Settings */
 .settings-section {
-    margin-bottom: 25px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #eee;
-}
-
-.settings-section:last-child {
-    border-bottom: none;
+    margin-bottom: 20px;
 }
 
 .settings-section h4 {
@@ -816,16 +939,6 @@ body {
     display: none !important;
 }
 
-.no-tickets {
-    text-align: center;
-    color: #666;
-    font-style: italic;
-    padding: 40px;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-}
-
 /* Buttons */
 .btn {
     padding: 8px 16px;
@@ -844,15 +957,6 @@ body {
 
 .btn-primary:hover {
     background: #5a6fd8;
-}
-
-.btn-secondary {
-    background: #6c757d;
-    color: white;
-}
-
-.btn-secondary:hover {
-    background: #5a6268;
 }
 
 .btn-success {
@@ -962,14 +1066,21 @@ body {
     background: #27ae60; 
 }
 
-/* Email notification indicator */
-.email-sent-indicator {
-    background: #27ae60;
-    color: white;
-    padding: 2px 6px;
+.no-tickets {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 40px;
+    background: white;
     border-radius: 10px;
-    font-size: 10px;
-    margin-left: 5px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-style: italic;
 }
 
 /* Responsive Design */
@@ -984,12 +1095,25 @@ body {
         padding: 8px 12px;
     }
     
+    .user-info {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
     .kanban-board {
+        grid-template-columns: 1fr;
+    }
+    
+    .team-kanban {
         grid-template-columns: 1fr;
     }
     
     .dashboard-stats {
         grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .team-stats {
+        grid-template-columns: 1fr;
     }
     
     .company-logo-large {
@@ -1012,16 +1136,17 @@ body {
     .header {
         padding: 10px;
         flex-direction: column;
-        gap: 10px;
+        gap: 15px;
     }
     
     .modal-content {
         margin: 10% auto;
         padding: 20px;
     }
-
-    .user-info {
-        order: -1;
+    
+    .tickets-filter {
+        flex-direction: column;
+        gap: 10px;
     }
 }
 
@@ -1042,30 +1167,4 @@ body {
     .nav-menu {
         justify-content: center;
     }
-
-    .tickets-filter {
-        flex-direction: column;
-        align-items: stretch;
-    }
-}
-
-/* Animation for real-time updates */
-@keyframes newTicketFlash {
-    0% { background: #fff3cd; }
-    50% { background: #ffeaa7; }
-    100% { background: white; }
-}
-
-.new-ticket-flash {
-    animation: newTicketFlash 2s ease-in-out;
-}
-
-@keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes slideOut {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(100%); opacity: 0; }
 }
