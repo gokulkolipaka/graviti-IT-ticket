@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Support Ticketing System</title>
+    <title>IT Support Ticketing System</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
@@ -17,7 +17,8 @@
                 <h1 id="loginCompanyName" class="company-name" onclick="editCompanyName()">Your Company Name</h1>
             </div>
             <div class="login-form">
-                <h2>Login to Support System</h2>
+                <h2>IT Ticketing System</h2>
+                <h3>Login to Support System</h3>
                 <form id="loginForm">
                     <input type="text" id="username" placeholder="Username" required>
                     <input type="password" id="password" placeholder="Password" required>
@@ -27,12 +28,6 @@
                     <a href="#" onclick="showPasswordReset()">Forgot Password?</a>
                 </div>
                 <div id="loginError" class="error-message"></div>
-                <div class="login-help">
-                    <h4>Demo Login Credentials:</h4>
-                    <p><strong>Admin:</strong> admin / admin123</p>
-                    <p><strong>IT Team:</strong> itteam1 / team123</p>
-                    <p><strong>User:</strong> user1 / user123</p>
-                </div>
             </div>
         </div>
     </div>
@@ -81,89 +76,86 @@
                 <button id="myTicketsBtn" class="nav-btn" data-page="myTickets">My Tickets</button>
                 
                 <!-- IT Team Navigation -->
-                <button id="kanbanBtn" class="nav-btn team-only" data-page="kanban">Ticket Board</button>
+                <button id="kanbanBtn" class="nav-btn team-only" data-page="teamKanban">Ticket Board</button>
                 
                 <!-- Admin Navigation -->
-                <button id="adminDashboardBtn" class="nav-btn admin-only" data-page="adminDashboard">Dashboard</button>
+                <button id="dashboardBtn" class="nav-btn admin-only" data-page="adminDashboard">Dashboard</button>
+                <button id="kanbanAdminBtn" class="nav-btn admin-only" data-page="adminKanban">Kanban Board</button>
                 <button id="userManagementBtn" class="nav-btn admin-only" data-page="userManagement">User Management</button>
                 <button id="reportsBtn" class="nav-btn admin-only" data-page="reports">Reports</button>
+                <button id="archiveBtn" class="nav-btn admin-only" data-page="archive">Archive</button>
                 <button id="settingsBtn" class="nav-btn admin-only" onclick="showSettingsModal()">Settings</button>
                 
                 <button id="logoutBtn" class="nav-btn logout" onclick="logout()">Logout</button>
             </nav>
         </header>
 
-        <!-- Admin Dashboard Page -->
+        <!-- Admin Dashboard Page (Separate Dashboard) -->
         <div id="adminDashboard" class="content-page admin-only">
-            <div class="admin-dashboard-container">
-                <!-- Dashboard Section -->
-                <div class="dashboard-section">
-                    <h2>Dashboard Overview</h2>
-                    <div class="dashboard-filters">
-                        <select id="dashboardFilter" onchange="filterDashboard()">
-                            <option value="department">Department Wise</option>
-                            <option value="category">Category Wise</option>
-                            <option value="teammember">Team Member Wise</option>
-                        </select>
-                        <button onclick="refreshDashboard()" class="btn btn-primary">Refresh</button>
-                    </div>
-                    <div class="dashboard-stats">
-                        <div class="stat-card">
-                            <h3>Total Tickets</h3>
-                            <span id="totalTickets" class="stat-number">0</span>
-                        </div>
-                        <div class="stat-card">
-                            <h3>Open</h3>
-                            <span id="openTickets" class="stat-number">0</span>
-                        </div>
-                        <div class="stat-card">
-                            <h3>In Progress</h3>
-                            <span id="inProgressTickets" class="stat-number">0</span>
-                        </div>
-                        <div class="stat-card">
-                            <h3>Resolved</h3>
-                            <span id="resolvedTickets" class="stat-number">0</span>
-                        </div>
-                        <div class="stat-card">
-                            <h3>Closed</h3>
-                            <span id="closedTickets" class="stat-number">0</span>
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="dashboardChart"></canvas>
-                    </div>
+            <h2>Dashboard Overview</h2>
+            <div class="dashboard-filters">
+                <select id="dashboardFilter" onchange="filterDashboard()">
+                    <option value="department">Department Wise</option>
+                    <option value="category">Category Wise</option>
+                    <option value="teammember">Team Member Wise</option>
+                </select>
+                <button onclick="refreshDashboard()" class="btn btn-primary">Refresh</button>
+            </div>
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <h3>Total Tickets</h3>
+                    <span id="totalTickets" class="stat-number">0</span>
                 </div>
+                <div class="stat-card">
+                    <h3>Open</h3>
+                    <span id="openTickets" class="stat-number">0</span>
+                </div>
+                <div class="stat-card">
+                    <h3>In Progress</h3>
+                    <span id="inProgressTickets" class="stat-number">0</span>
+                </div>
+                <div class="stat-card">
+                    <h3>Resolved</h3>
+                    <span id="resolvedTickets" class="stat-number">0</span>
+                </div>
+                <div class="stat-card">
+                    <h3>Closed</h3>
+                    <span id="closedTickets" class="stat-number">0</span>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="dashboardChart"></canvas>
+            </div>
+        </div>
 
-                <!-- Admin Kanban Board -->
-                <div class="kanban-section">
-                    <h2>Admin Kanban Board</h2>
-                    <div class="kanban-controls">
-                        <button onclick="refreshKanban()" class="btn btn-primary">Refresh Board</button>
-                    </div>
-                    <div class="kanban-board">
-                        <div class="kanban-column" data-status="Open">
-                            <h3>Open <span id="adminOpenCount" class="count-badge">0</span></h3>
-                            <div id="adminOpenColumn" class="kanban-tickets"></div>
-                        </div>
-                        <div class="kanban-column" data-status="In Progress">
-                            <h3>In Progress <span id="adminProgressCount" class="count-badge">0</span></h3>
-                            <div id="adminInProgressColumn" class="kanban-tickets"></div>
-                        </div>
-                        <div class="kanban-column" data-status="Resolved">
-                            <h3>Resolved <span id="adminResolvedCount" class="count-badge">0</span></h3>
-                            <div id="adminResolvedColumn" class="kanban-tickets"></div>
-                        </div>
-                        <div class="kanban-column" data-status="Closed">
-                            <h3>Closed <span id="adminClosedCount" class="count-badge">0</span></h3>
-                            <div id="adminClosedColumn" class="kanban-tickets"></div>
-                        </div>
-                    </div>
+        <!-- Admin Kanban Page (Separate Kanban) -->
+        <div id="adminKanban" class="content-page admin-only">
+            <h2>Admin Kanban Board</h2>
+            <div class="kanban-controls">
+                <button onclick="refreshKanban()" class="btn btn-primary">Refresh Board</button>
+            </div>
+            <div class="kanban-board">
+                <div class="kanban-column" data-status="Open">
+                    <h3>Open <span id="adminOpenCount" class="count-badge">0</span></h3>
+                    <div id="adminOpenColumn" class="kanban-tickets"></div>
+                </div>
+                <div class="kanban-column" data-status="In Progress">
+                    <h3>In Progress <span id="adminProgressCount" class="count-badge">0</span></h3>
+                    <div id="adminInProgressColumn" class="kanban-tickets"></div>
+                </div>
+                <div class="kanban-column" data-status="Resolved">
+                    <h3>Resolved <span id="adminResolvedCount" class="count-badge">0</span></h3>
+                    <div id="adminResolvedColumn" class="kanban-tickets"></div>
+                </div>
+                <div class="kanban-column" data-status="Closed">
+                    <h3>Closed <span id="adminClosedCount" class="count-badge">0</span></h3>
+                    <div id="adminClosedColumn" class="kanban-tickets"></div>
                 </div>
             </div>
         </div>
 
         <!-- IT Team Kanban Page -->
-        <div id="kanban" class="content-page team-only">
+        <div id="teamKanban" class="content-page team-only">
             <h2>IT Team - Ticket Board</h2>
             <div class="kanban-info">
                 <p><strong>Instructions:</strong> You can drag your assigned tickets from "In Progress" to "Resolved" when you complete the work.</p>
@@ -227,14 +219,18 @@
                     <label for="department">Department:</label>
                     <select id="department" required>
                         <option value="">Select Department</option>
-                        <option value="IT">IT</option>
+                        <option value="Corporate">Corporate</option>
                         <option value="HR">HR</option>
-                        <option value="Finance">Finance</option>
-                        <option value="Marketing">Marketing</option>
-                        <option value="Operations">Operations</option>
-                        <option value="Sales">Sales</option>
+                        <option value="Manufacturing">Manufacturing</option>
+                        <option value="Warehouse">Warehouse</option>
+                        <option value="QC">QC</option>
+                        <option value="QA">QA</option>
+                        <option value="Docu Cell">Docu Cell</option>
                         <option value="Admin">Admin</option>
-                        <option value="Other">Other</option>
+                        <option value="Engineering">Engineering</option>
+                        <option value="Security">Security</option>
+                        <option value="Stores">Stores</option>
+                        <option value="Others">Others</option>
                     </select>
                 </div>
 
@@ -267,7 +263,7 @@
             </form>
         </div>
 
-        <!-- My Tickets Page -->
+        <!-- My Tickets Page (Separate Page) -->
         <div id="myTickets" class="content-page">
             <h2 id="ticketsPageTitle">My Tickets</h2>
             <div class="tickets-filter">
@@ -312,6 +308,54 @@
             </div>
             <div id="reportTable" class="report-table"></div>
         </div>
+
+        <!-- Archive Page (Admin Only) -->
+        <div id="archive" class="content-page admin-only">
+            <h2>Archived Tickets</h2>
+            <div class="archive-controls">
+                <div class="archive-filters">
+                    <input type="date" id="archiveStartDate" placeholder="Start Date">
+                    <input type="date" id="archiveEndDate" placeholder="End Date">
+                    <select id="archiveDepartmentFilter">
+                        <option value="">All Departments</option>
+                        <option value="Corporate">Corporate</option>
+                        <option value="HR">HR</option>
+                        <option value="Manufacturing">Manufacturing</option>
+                        <option value="Warehouse">Warehouse</option>
+                        <option value="QC">QC</option>
+                        <option value="QA">QA</option>
+                        <option value="Docu Cell">Docu Cell</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Engineering">Engineering</option>
+                        <option value="Security">Security</option>
+                        <option value="Stores">Stores</option>
+                        <option value="Others">Others</option>
+                    </select>
+                    <button onclick="filterArchive()" class="btn btn-primary">Filter</button>
+                    <button onclick="clearArchiveFilter()" class="btn btn-secondary">Clear Filter</button>
+                </div>
+                <div class="archive-actions">
+                    <button onclick="exportArchive()" class="btn btn-success">Export Archive</button>
+                    <button onclick="showBackupModal()" class="btn btn-warning">Backup Data</button>
+                    <button onclick="restoreFromBackup()" class="btn btn-danger">Restore Backup</button>
+                </div>
+            </div>
+            <div class="archive-stats">
+                <div class="stat-card">
+                    <h3>Total Archived</h3>
+                    <span id="totalArchived" class="stat-number">0</span>
+                </div>
+                <div class="stat-card">
+                    <h3>This Month</h3>
+                    <span id="thisMonthArchived" class="stat-number">0</span>
+                </div>
+                <div class="stat-card">
+                    <h3>Storage Used</h3>
+                    <span id="storageUsed" class="stat-number">0 MB</span>
+                </div>
+            </div>
+            <div id="archiveList" class="archive-list"></div>
+        </div>
     </div>
 
     <!-- Real-time Status Indicator -->
@@ -337,13 +381,17 @@
                 <input type="email" id="newUserEmail" placeholder="Email" required>
                 <select id="newUserDepartment" required>
                     <option value="">Select Department</option>
-                    <option value="IT">IT</option>
+                    <option value="Corporate">Corporate</option>
                     <option value="HR">HR</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Operations">Operations</option>
-                    <option value="Sales">Sales</option>
+                    <option value="Manufacturing">Manufacturing</option>
+                    <option value="Warehouse">Warehouse</option>
+                    <option value="QC">QC</option>
+                    <option value="QA">QA</option>
+                    <option value="Docu Cell">Docu Cell</option>
                     <option value="Admin">Admin</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Security">Security</option>
+                    <option value="Stores">Stores</option>
                 </select>
                 <select id="newUserRole" required>
                     <option value="user">Regular User</option>
@@ -391,6 +439,27 @@
                     <input type="text" id="companyNameEdit" value="Your Company Name">
                     <button onclick="updateCompanyName()">Update</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="backupModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('backupModal')">&times;</span>
+            <h3>Data Backup & Restore</h3>
+            <div class="backup-section">
+                <h4>Create Backup</h4>
+                <p>Create a timestamped backup of all system data.</p>
+                <button onclick="createTimestampedBackup()" class="btn btn-success">Create Backup</button>
+            </div>
+            <div class="backup-section">
+                <h4>Restore from Backup</h4>
+                <input type="file" id="backupFile" accept=".json">
+                <button onclick="restoreBackupFile()" class="btn btn-warning">Restore Data</button>
+            </div>
+            <div class="backup-history">
+                <h4>Backup History</h4>
+                <div id="backupHistoryList"></div>
             </div>
         </div>
     </div>
